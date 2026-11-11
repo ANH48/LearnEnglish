@@ -32,7 +32,7 @@ const choiceShape = {
 const editorSchemas = {
   multiple_choice: z.object(choiceShape),
   listening: z.object({ transcript: text.max(2000), ...choiceShape }),
-  fill_blank: z.object({ text, answers: z.array(z.array(text).min(1).max(10)).min(1).max(30) }),
+  fill_blank: z.object({ text, answers: z.array(z.array(text.max(200, "Đáp án tối đa 200 ký tự")).min(1).max(10)).min(1).max(30) }),
   matching: z.object({ pairs: z.array(z.object({ left: text, right: text })).min(2, "Cần ít nhất 2 cặp").max(12) }),
   ordering: z.object({ sentence: text }),
   writing: z.object({ minWords: z.number().int().min(0).max(2000) }),
@@ -90,6 +90,7 @@ export function buildExerciseContent(type: ExerciseTypeName, payload: unknown): 
     case "ordering": {
       const tokens = (p as EditorPayload["ordering"]).sentence.split(/\s+/);
       if (tokens.length < 2) return fail("Câu cần có ít nhất 2 từ.");
+      if (tokens.length > 60) return fail("Câu tối đa 60 từ.");
       return { ok: true, data: { tokens: sorted(tokens) }, answerKey: { tokens } };
     }
     case "writing":

@@ -11,7 +11,7 @@ Web học tiếng Anh cho lớp riêng: teacher soạn khóa học, bài học, 
 | Giai đoạn | Nội dung | Trạng thái |
 |---|---|---|
 | 1 | Đăng nhập staff, group quyền, CRUD thể loại / khóa học / bài học / bài tập, khung admin | Xong |
-| 2 | Landing, đăng ký học viên, xin vào khóa, học, chấm tự động | Chưa làm |
+| 2 | Landing, đăng ký học viên, xin vào khóa, học, chấm tự động | Xong |
 | 3 | Bài kiểm tra, bài thi, chấm tay, bảng điểm | Chưa làm |
 | 4 | AI bridge, PDF thành bản nháp, prompt version (MongoDB) | Chưa làm |
 | 5 | Giọng đọc UK 3 tốc độ | Chưa làm |
@@ -27,7 +27,7 @@ npm install
 cp .env.example .env        # điền chuỗi kết nối database và hai secret JWT
 npm run db:deploy           # tạo bảng
 npm run db:seed             # tạo superadmin đầu tiên và 2 group mẫu
-npm run dev                 # http://localhost:3000/admin/login
+npm run dev                 # http://localhost:3000 (học viên), /admin/login (staff)
 ```
 
 `.env` và mọi file `*.env` đều bị git bỏ qua. Không commit thông tin đăng nhập.
@@ -43,6 +43,7 @@ npm run dev                 # http://localhost:3000/admin/login
 | `npm test` | Unit test (vitest) |
 | `npm run db:migrate` | Tạo migration mới khi sửa `prisma/schema.prisma` |
 | `npx tsx --env-file=.env scripts/e2e-guard-check.ts` | Kiểm tra chặn route và phạm vi khóa học trên app đang chạy (mặc định cổng 3457, đổi bằng `E2E_BASE_URL`) |
+| `npx tsx --env-file=.env scripts/e2e-learner-check.ts` | Kiểm tra khu học viên: trang công khai, cổng đăng ký khóa, đáp án không lộ ra trình duyệt |
 
 ## Lưu ý về Next.js 16
 

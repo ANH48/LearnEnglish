@@ -4,7 +4,7 @@
 - [plan.md](plan.md) · [phase-01](phase-01-foundation-auth-permissions-content-crud.md) · Spec Luồng 2, Loại bài tập
 
 ## Overview
-- Priority: P0. Status: pending. Phụ thuộc phase 01.
+- Priority: P0. Status: complete (2026-11-11). Phụ thuộc phase 01.
 - Landing, đăng ký/đăng nhập customer, xin vào khóa → teacher duyệt → học + làm bài tập chấm tự động + tiến độ.
 
 ## Key Insights
@@ -49,15 +49,15 @@ Guard: `requireApprovedEnrollment(customerId, courseId)` cho mọi trang/hành �
 11. Test graders + enrollment guard; typecheck; lint.
 
 ## Todo
-- [ ] Auth customer
-- [ ] Landing + trang khóa
-- [ ] Enrollment + state machine
-- [ ] Admin duyệt đăng ký
-- [ ] Trang bài học
-- [ ] 5 grader + test
-- [ ] 5 player UI
-- [ ] Tiến độ
-- [ ] Test + typecheck
+- [x] Auth customer
+- [x] Landing + trang khóa
+- [x] Enrollment + state machine
+- [x] Admin duyệt đăng ký
+- [x] Trang bài học
+- [x] 5 grader + test
+- [x] 5 player UI
+- [x] Tiến độ
+- [x] Test + typecheck
 
 ## Success Criteria
 - Học viên chưa duyệt không mở được bài học (kể cả gọi thẳng URL/action).
