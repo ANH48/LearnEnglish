@@ -1,0 +1,449 @@
+// Main relational data. Prompt versions live in MongoDB (phase 04), not here.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // Supabase pooler
+  directUrl = env("DIRECT_URL") // Supabase direct connection, used by migrations
+}
+
+enum AccountStatus {
+  active
+  locked
+}
+
+enum ContentStatus {
+  draft
+  published
+}
+
+enum ExerciseType {
+  multiple_choice
+  fill_blank
+  listening
+  matching
+  ordering
+  writing
+  speaking
+}
+
+enum EnrollmentStatus {
+  pending
+  approved
+  rejected
+  cancelled
+}
+
+enum AssessmentKind {
+  quiz_15
+  test_60
+  custom
+  exam
+}
+
+enum AttemptStatus {
+  in_progress
+  submitted
+  graded
+}
+
+enum MediaKind {
+  pdf
+  audio
+  recording
+}
+
+enum AudioSpeed {
+  slow
+  normal
+  fast
+}
+
+enum AiJobType {
+  pdf_parse
+  tts
+}
+
+enum AiJobStatus {
+  queued
+  running
+  done
+  failed
+}
+
+// ---------- Accounts and permissions ----------
+
+model Staff {
+  id               String        @id @default(uuid()) @db.Uuid
+  email            String        @unique
+  passwordHash     String        @map("password_hash")
+  fullName         String        @map("full_name")
+  isSuperadmin     Boolean       @default(false) @map("is_superadmin")
+  status           AccountStatus @default(active)
+  tokenVersion     Int           @default(0) @map("token_version")
+  failedLoginCount Int           @default(0) @map("failed_login_count")
+  lockedUntil      DateTime?     @map("locked_until")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+  deletedAt        DateTime?     @map("deleted_at")
+
+  groups         StaffGroup[]
+  courseTeachers CourseTeacher[]
+  auditLogs      AuditLog[]
+
+  @@map("staff")
+}
+
+model PermissionGroup {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique
+  description String   @default("")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  permissions GroupPermission[]
+  staff       StaffGroup[]
+
+  @@map("permission_groups")
+}
+
+model GroupPermission {
+  groupId       String @map("group_id") @db.Uuid
+  permissionKey String @map("permission_key")
+
+  group PermissionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, permissionKey])
+  @@map("group_permissions")
+}
+
+model StaffGroup {
+  staffId String @map("staff_id") @db.Uuid
+  groupId String @map("group_id") @db.Uuid
+
+  staff Staff           @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  group PermissionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([staffId, groupId])
+  @@map("staff_groups")
+}
+
+model Customer {
+  id               String        @id @default(uuid()) @db.Uuid
+  email            String        @unique
+  passwordHash     String        @map("password_hash")
+  fullName         String        @map("full_name")
+  status           AccountStatus @default(active)
+  tokenVersion     Int           @default(0) @map("token_version")
+  failedLoginCount Int           @default(0) @map("failed_login_count")
+  lockedUntil      DateTime?     @map("locked_until")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+  deletedAt        DateTime?     @map("deleted_at")
+
+  enrollments    Enrollment[]
+  attempts       Attempt[]
+  answers        Answer[]
+  lessonProgress LessonProgress[]
+
+  @@map("customers")
+}
+
+// ---------- Content ----------
+
+model Category {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String
+  slug      String    @unique
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  courses CourseCategory[]
+
+  @@map("categories")
+}
+
+model Course {
+  id          String        @id @default(uuid()) @db.Uuid
+  title       String
+  slug        String        @unique
+  description String        @default("")
+  status      ContentStatus @default(draft)
+  createdBy   String        @map("created_by") @db.Uuid
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  deletedAt   DateTime?     @map("deleted_at")
+
+  categories  CourseCategory[]
+  teachers    CourseTeacher[]
+  lessons     Lesson[]
+  exercises   Exercise[]
+  enrollments Enrollment[]
+  assessments Assessment[]
+  aiJobs      AiJob[]
+
+  @@map("courses")
+}
+
+model CourseCategory {
+  courseId   String @map("course_id") @db.Uuid
+  categoryId String @map("category_id") @db.Uuid
+
+  course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([courseId, categoryId])
+  @@map("course_categories")
+}
+
+// "Own courses" scope: a staff member without course.view_all only sees courses listed here.
+model CourseTeacher {
+  courseId String @map("course_id") @db.Uuid
+  staffId  String @map("staff_id") @db.Uuid
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  staff  Staff  @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@id([courseId, staffId])
+  @@index([staffId])
+  @@map("course_teachers")
+}
+
+model Lesson {
+  id          String        @id @default(uuid()) @db.Uuid
+  courseId    String        @map("course_id") @db.Uuid
+  title       String
+  content     String        @default("")
+  position    Int           @default(0)
+  status      ContentStatus @default(draft)
+  sourcePdfId String?       @map("source_pdf_id") @db.Uuid
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  deletedAt   DateTime?     @map("deleted_at")
+
+  course    Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  sourcePdf MediaFile?       @relation(fields: [sourcePdfId], references: [id])
+  exercises Exercise[]
+  progress  LessonProgress[]
+
+  @@index([courseId, position])
+  @@map("lessons")
+}
+
+model Exercise {
+  id        String        @id @default(uuid()) @db.Uuid
+  courseId  String        @map("course_id") @db.Uuid
+  lessonId  String?       @map("lesson_id") @db.Uuid // null: only used inside assessments
+  type      ExerciseType
+  prompt    String
+  data      Json          @default("{}") // choices, pairs, transcript... shape depends on type
+  answerKey Json          @default("{}") @map("answer_key") // never sent to learners before submit
+  points    Int           @default(1)
+  position  Int           @default(0)
+  status    ContentStatus @default(draft)
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+  deletedAt DateTime?     @map("deleted_at")
+
+  course      Course               @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lesson      Lesson?              @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  audios      ExerciseAudio[]
+  assessments AssessmentExercise[]
+  answers     Answer[]
+
+  @@index([courseId])
+  @@index([lessonId, position])
+  @@map("exercises")
+}
+
+model MediaFile {
+  id         String    @id @default(uuid()) @db.Uuid
+  kind       MediaKind
+  storageKey String    @unique @map("storage_key")
+  mime       String
+  sizeBytes  Int       @map("size_bytes")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  lessons        Lesson[]
+  exerciseAudios ExerciseAudio[]
+  answers        Answer[]
+
+  @@map("media_files")
+}
+
+model ExerciseAudio {
+  exerciseId String     @map("exercise_id") @db.Uuid
+  speed      AudioSpeed
+  mediaId    String     @map("media_id") @db.Uuid
+
+  exercise Exercise  @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  media    MediaFile @relation(fields: [mediaId], references: [id])
+
+  @@id([exerciseId, speed])
+  @@map("exercise_audios")
+}
+
+// ---------- Learning, assessments, scores ----------
+
+model Enrollment {
+  id         String           @id @default(uuid()) @db.Uuid
+  courseId   String           @map("course_id") @db.Uuid
+  customerId String           @map("customer_id") @db.Uuid
+  status     EnrollmentStatus @default(pending)
+  reviewedBy String?          @map("reviewed_by") @db.Uuid
+  reviewedAt DateTime?        @map("reviewed_at")
+  note       String           @default("")
+  createdAt  DateTime         @default(now()) @map("created_at")
+  updatedAt  DateTime         @updatedAt @map("updated_at")
+
+  course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, customerId])
+  @@index([customerId])
+  @@map("enrollments")
+}
+
+model Assessment {
+  id              String         @id @default(uuid()) @db.Uuid
+  courseId        String         @map("course_id") @db.Uuid
+  kind            AssessmentKind
+  title           String
+  durationMinutes Int            @map("duration_minutes")
+  opensAt         DateTime?      @map("opens_at") // exam only
+  closesAt        DateTime?      @map("closes_at") // exam only
+  maxAttempts     Int            @default(1) @map("max_attempts")
+  status          ContentStatus  @default(draft)
+  createdBy       String         @map("created_by") @db.Uuid
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  deletedAt       DateTime?      @map("deleted_at")
+
+  course    Course               @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  exercises AssessmentExercise[]
+  attempts  Attempt[]
+
+  @@index([courseId])
+  @@map("assessments")
+}
+
+model AssessmentExercise {
+  assessmentId String @map("assessment_id") @db.Uuid
+  exerciseId   String @map("exercise_id") @db.Uuid
+  position     Int    @default(0)
+  points       Int    @default(1)
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  exercise   Exercise   @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  @@id([assessmentId, exerciseId])
+  @@map("assessment_exercises")
+}
+
+model Attempt {
+  id           String        @id @default(uuid()) @db.Uuid
+  assessmentId String        @map("assessment_id") @db.Uuid
+  customerId   String        @map("customer_id") @db.Uuid
+  startedAt    DateTime      @default(now()) @map("started_at")
+  deadlineAt   DateTime      @map("deadline_at") // computed by the server, never by the browser
+  submittedAt  DateTime?     @map("submitted_at")
+  status       AttemptStatus @default(in_progress)
+  score        Decimal?      @db.Decimal(7, 2)
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  customer   Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  answers    Answer[]
+
+  @@index([assessmentId, customerId])
+  @@map("attempts")
+}
+
+model Answer {
+  id          String    @id @default(uuid()) @db.Uuid
+  attemptId   String?   @map("attempt_id") @db.Uuid // null: practice exercise inside a lesson
+  exerciseId  String    @map("exercise_id") @db.Uuid
+  customerId  String    @map("customer_id") @db.Uuid
+  response    Json      @default("{}")
+  mediaId     String?   @map("media_id") @db.Uuid // speaking recording
+  autoScore   Decimal?  @map("auto_score") @db.Decimal(7, 2)
+  manualScore Decimal?  @map("manual_score") @db.Decimal(7, 2)
+  feedback    String    @default("")
+  gradedBy    String?   @map("graded_by") @db.Uuid
+  gradedAt    DateTime? @map("graded_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  attempt  Attempt?   @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  exercise Exercise   @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  customer Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  media    MediaFile? @relation(fields: [mediaId], references: [id])
+
+  @@unique([attemptId, exerciseId])
+  @@index([customerId, exerciseId])
+  @@map("answers")
+}
+
+model LessonProgress {
+  customerId  String   @map("customer_id") @db.Uuid
+  lessonId    String   @map("lesson_id") @db.Uuid
+  completedAt DateTime @default(now()) @map("completed_at")
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  lesson   Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@id([customerId, lessonId])
+  @@map("lesson_progress")
+}
+
+// ---------- AI and system ----------
+
+model AiJob {
+  id               String      @id @default(uuid()) @db.Uuid
+  type             AiJobType
+  status           AiJobStatus @default(queued)
+  courseId         String?     @map("course_id") @db.Uuid
+  // Prompt lives in MongoDB, so these are plain values, not foreign keys.
+  promptKey        String?     @map("prompt_key")
+  promptVersion    String?     @map("prompt_version")
+  promptVersionLog Int?        @map("prompt_version_log")
+  input            Json        @default("{}")
+  output           Json?
+  error            String?
+  requestedBy      String      @map("requested_by") @db.Uuid
+  startedAt        DateTime?   @map("started_at")
+  finishedAt       DateTime?   @map("finished_at")
+  createdAt        DateTime    @default(now()) @map("created_at")
+
+  course Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@map("ai_jobs")
+}
+
+model BridgeWorker {
+  id         String    @id @default(uuid()) @db.Uuid
+  name       String    @unique
+  tokenHash  String    @map("token_hash")
+  lastSeenAt DateTime? @map("last_seen_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@map("bridge_workers")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  staffId   String   @map("staff_id") @db.Uuid
+  action    String
+  entity    String
+  entityId  String   @map("entity_id")
+  detail    Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  staff Staff @relation(fields: [staffId], references: [id])
+
+  @@index([entity, entityId])
+  @@map("audit_logs")
+}
