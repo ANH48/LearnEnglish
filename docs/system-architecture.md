@@ -36,7 +36,7 @@ Bài tập lưu hai cột JSON: `data` (học viên được thấy) và `answer
 
 Bài học có hai phần nội dung, dùng riêng hoặc cùng lúc: `content` (markdown) và `blocks` (JSON, danh sách khối theo thứ tự). Sáu loại khối, định nghĩa ở `features/lesson-blocks/lesson-blocks.ts`: `sentences` (danh sách câu + một file audio + mốc giây từng câu), `notes` (cấu trúc cần nhớ), `exercise` (đặt một bài tập của bài học vào giữa các khối), `story` (truyện, audio chậm / thường / nhanh, lời truyện ẩn tới khi bấm xem), `vocabulary` (từ + nghĩa, bấm kiểm tra thì hiện bài tập gõ nghĩa), `translation`. Chữ in đậm trong câu tiếng Anh viết bằng `**...**`. Cột `blocks` hỏng định dạng thì coi như không có khối, không lỗi trang.
 
-Hiện chưa có form soạn khối trong admin: bài theo ngày được nhập bằng `scripts/import-day-lesson.ts` từ một file JSON (chữ + bài tập vào database, mp3 vào bucket); chạy lại thì cập nhật tại chỗ. File JSON và mp3 chỉ là đầu vào tạm, không lưu trong repo. Form bài học trong admin không đụng tới `blocks`.
+Hiện chưa có form soạn khối trong admin: bài theo ngày được nhập bằng `scripts/import-day-lesson.ts` từ một file JSON (chữ + bài tập vào database, mp3 vào bucket); chạy lại thì cập nhật tại chỗ. File JSON và mp3 chỉ là đầu vào tạm, không lưu trong repo. Form bài học trong admin không đụng tới `blocks`. Trang bài học trong admin hiện phần xem thử các khối (kèm player audio), và `/admin/lesson-audio` liệt kê mọi file audio theo bài để teacher nghe kiểm tra (quyền `course.manage`, theo phạm vi khóa học).
 
 Tài khoản và nội dung dùng xóa mềm (`deleted_at`); email và slug của bản đã xóa được đổi tên để dùng lại được.
 

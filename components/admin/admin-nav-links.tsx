@@ -6,6 +6,7 @@ import {
   ClipboardList,
   FolderTree,
   GraduationCap,
+  Headphones,
   LayoutDashboard,
   type LucideIcon,
   PenTool,
@@ -20,6 +21,7 @@ import { cn } from "@/lib/utils";
 const ICONS: Record<string, LucideIcon> = {
   "/admin": LayoutDashboard,
   "/admin/courses": BookOpen,
+  "/admin/lesson-audio": Headphones,
   "/admin/assessments": ClipboardList,
   "/admin/categories": FolderTree,
   "/admin/enrollments": UserCheck,

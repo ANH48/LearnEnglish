@@ -82,6 +82,22 @@ export function blockAudioIds(blocks: LessonBlock[]): string[] {
   });
 }
 
+const SPEED_NAMES: Record<StorySpeed, string> = { slow: "Chậm", normal: "Bình thường", fast: "Nhanh" };
+
+/** Every audio file with a name a teacher recognises, in lesson order; for the admin audio list. */
+export function blockAudioEntries(blocks: LessonBlock[]): { mediaId: string; label: string }[] {
+  return blocks.flatMap((block) => {
+    if (block.type === "sentences") return block.audioId ? [{ mediaId: block.audioId, label: block.title || "Các câu" }] : [];
+    if (block.type === "story") {
+      return STORY_SPEEDS.flatMap((speed) => {
+        const mediaId = block.audio[speed];
+        return mediaId ? [{ mediaId, label: `Truyện: ${block.title} · ${SPEED_NAMES[speed]}` }] : [];
+      });
+    }
+    return [];
+  });
+}
+
 /** Exercises a block shows in place, so the lesson page does not list them a second time. */
 export function blockExerciseIds(blocks: LessonBlock[]): string[] {
   return blocks.flatMap((block) => {

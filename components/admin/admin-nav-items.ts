@@ -9,6 +9,7 @@ export const NAV_GROUPS: { title: string | null; items: NavItem[] }[] = [
     title: "Nội dung",
     items: [
       { href: "/admin/courses", label: "Khóa học", permission: "course.manage" },
+      { href: "/admin/lesson-audio", label: "Audio bài học", permission: "course.manage" },
       { href: "/admin/assessments", label: "Bài kiểm tra", permission: "assessment.manage" },
       { href: "/admin/categories", label: "Thể loại", permission: "category.manage" },
     ],
