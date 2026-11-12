@@ -97,7 +97,6 @@ async function main() {
   const fillBlankId = await saveExercise(previousFillBlankId, day.fillBlank.prompt, day.fillBlank.points, 0, {
     text: day.fillBlank.text,
     answers: day.fillBlank.answers,
-    teacherGraded: true,
   });
   const quizId = await saveExercise(previousQuizId, day.vocabulary.quizPrompt, day.vocabulary.items.length, 1, {
     text: day.vocabulary.items.map((item) => `${item.en}: ___`).join("\n"),
