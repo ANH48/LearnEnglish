@@ -1,6 +1,7 @@
 import { CheckCircle2, Circle } from "lucide-react";
 import Link from "next/link";
 import { ASSESSMENT_KIND_LABELS, type AssessmentKindName } from "@/lib/assessments/attempt-rules";
+import { ChallengeCourseCard } from "@/features/challenge/challenge-course-card";
 import { lessonExerciseCounts } from "@/features/progress/lesson-exercise-completion";
 import { ProgressBar } from "@/features/progress/progress-bar";
 import { requireApprovedCourse } from "@/lib/auth/current-customer";
@@ -37,6 +38,8 @@ export default async function LearnCoursePage({ params }: { params: Promise<{ co
         <h1 className="text-2xl font-semibold text-balance">{course.title}</h1>
         <ProgressBar done={done} total={lessons.length} />
       </div>
+
+      {lessons.length > 0 && <ChallengeCourseCard customerId={customer.id} courseId={course.id} courseSlug={course.slug} level={done} />}
 
       {lessons.length === 0 && <p className="text-muted-foreground">Khóa học chưa có bài học nào.</p>}
       <ol className="grid gap-2">

@@ -148,6 +148,8 @@ model Customer {
   answers        Answer[]
   lessonProgress LessonProgress[]
   submissions    PracticeSubmission[]
+  streaks        CourseStreak[]
+  challenges     ChallengeSession[]
 
   @@map("customers")
 }
@@ -186,6 +188,8 @@ model Course {
   assessments Assessment[]
   aiJobs      AiJob[]
   submissions PracticeSubmission[]
+  streaks     CourseStreak[]
+  challenges  ChallengeSession[]
 
   @@map("courses")
 }
@@ -475,4 +479,46 @@ model AuditLog {
 
   @@index([entity, entityId])
   @@map("audit_logs")
+}
+
+// ---------- Daily challenge ----------
+
+// The daily challenge streak (and pet) of one learner in one course. See features/challenge/challenge-streak.ts.
+model CourseStreak {
+  customerId String   @map("customer_id") @db.Uuid
+  courseId   String   @map("course_id") @db.Uuid
+  current    Int      @default(0)
+  best       Int      @default(0)
+  toRestore  Int      @default(0) @map("to_restore") // streak lost on a missed day, back with a challenge scored 80%+
+  lastDay    String?  @map("last_day") // Vietnam calendar day (YYYY-MM-DD) the streak last counted
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@id([customerId, courseId])
+  @@map("course_streaks")
+}
+
+// One try of the daily challenge: the exercises of every finished lesson, each shuffled.
+// items holds the shuffled exercises with their answer keys; only the server reads it.
+model ChallengeSession {
+  id          String    @id @default(uuid()) @db.Uuid
+  customerId  String    @map("customer_id") @db.Uuid
+  courseId    String    @map("course_id") @db.Uuid
+  level       Int // finished lessons the challenge was built from
+  items       Json
+  maxPoints   Int       @map("max_points")
+  responses   Json?
+  results     Json? // per item: score and right/wrong parts
+  score       Decimal?  @db.Decimal(7, 2)
+  outcome     String? // counted | restored | already_counted | restore_failed
+  createdAt   DateTime  @default(now()) @map("created_at")
+  completedAt DateTime? @map("completed_at")
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([customerId, courseId, createdAt])
+  @@map("challenge_sessions")
 }
