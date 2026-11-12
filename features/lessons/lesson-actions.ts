@@ -6,7 +6,7 @@ import { z } from "zod";
 import { writeAuditLog } from "@/lib/audit/write-audit-log";
 import { requireCourseAccess } from "@/lib/auth/current-staff";
 import { db } from "@/lib/db";
-import { requireUuid } from "@/lib/forms/require-uuid";
+import { requireUuid, uniqueIds } from "@/lib/forms/require-uuid";
 import { type ActionState, validationFailed } from "@/lib/forms/action-state";
 
 const lessonSchema = z.object({
@@ -60,6 +60,26 @@ export async function deleteLessonAction(courseId: string, lessonId: string): Pr
   ]);
   await writeAuditLog(actor.id, "lesson.delete", "lesson", lessonId, { courseId });
   revalidatePath(`/admin/courses/${courseId}`);
+}
+
+/** Publish or unpublish several lessons of one course at once. Returns how many lessons changed. */
+export async function setLessonsStatusAction(courseId: string, lessonIds: string[], status: "draft" | "published"): Promise<number> {
+  const actor = await requireCourseAccess("course.manage", courseId);
+  // Bound arguments are untrusted JSON: accept only a bounded list of plain UUIDs and a known status.
+  if (!Array.isArray(lessonIds) || lessonIds.length === 0 || lessonIds.length > 500) return 0;
+  requireUuid(courseId, ...lessonIds);
+  if (status !== "draft" && status !== "published") return 0;
+
+  const ids = uniqueIds(lessonIds);
+  const updated = await db.lesson.updateMany({
+    where: { id: { in: ids }, courseId, deletedAt: null, status: { not: status } },
+    data: { status },
+  });
+  if (updated.count > 0) {
+    await writeAuditLog(actor.id, "lesson.bulk_status", "course", courseId, { status, lessonIds: ids, changed: updated.count });
+  }
+  revalidatePath(`/admin/courses/${courseId}`);
+  return updated.count;
 }
 
 /** Swap a lesson with the one just above or below it. */
