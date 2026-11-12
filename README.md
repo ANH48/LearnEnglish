@@ -44,7 +44,7 @@ Supabase free chỉ có 1 GB storage. Khi data lớn thì chuyển sang AWS S3 h
 | Lệnh | Việc |
 |---|---|
 | `npm run dev` | Chạy bản phát triển |
-| `npm run build` | Sinh Prisma client và build bản production |
+| `npm run build` | Sinh Prisma client, chạy migration (`prisma migrate deploy`, cần `DIRECT_URL`) rồi build bản production. Vercel chạy lệnh này mỗi lần deploy |
 | `npm run typecheck` | Kiểm tra kiểu TypeScript |
 | `npm run lint` | ESLint |
 | `npm test` | Unit test (vitest) |
