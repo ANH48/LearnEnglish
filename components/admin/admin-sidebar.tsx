@@ -10,7 +10,10 @@ type NavItem = { href: string; label: string; permission?: PermissionKey; supera
 const NAV_ITEMS: NavItem[] = [
   { href: "/admin", label: "Tổng quan" },
   { href: "/admin/courses", label: "Khóa học", permission: "course.manage" },
+  { href: "/admin/assessments", label: "Bài kiểm tra", permission: "assessment.manage" },
   { href: "/admin/enrollments", label: "Duyệt đăng ký", permission: "enrollment.review" },
+  { href: "/admin/grading", label: "Chấm bài", permission: "grading.manual" },
+  { href: "/admin/gradebook", label: "Bảng điểm", permission: "grading.manual" },
   { href: "/admin/categories", label: "Thể loại", permission: "category.manage" },
   { href: "/admin/customers", label: "Học viên", permission: "customer.manage" },
   { href: "/admin/staff", label: "Staff", permission: "staff.manage" },

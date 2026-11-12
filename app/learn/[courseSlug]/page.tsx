@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ASSESSMENT_KIND_LABELS, type AssessmentKindName } from "@/lib/assessments/attempt-rules";
 import { ProgressBar } from "@/features/progress/progress-bar";
 import { requireApprovedCourse } from "@/lib/auth/current-customer";
 import { db } from "@/lib/db";
@@ -8,6 +9,11 @@ export default async function LearnCoursePage({ params }: { params: Promise<{ co
   const { courseSlug } = await params;
   const { customer, course } = await requireApprovedCourse(courseSlug);
 
+  const assessments = await db.assessment.findMany({
+    where: { courseId: course.id, deletedAt: null, status: "published" },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, title: true, kind: true, durationMinutes: true },
+  });
   const lessons = await db.lesson.findMany({
     where: { courseId: course.id, deletedAt: null, status: "published" },
     orderBy: [{ position: "asc" }, { createdAt: "asc" }],
@@ -48,6 +54,29 @@ export default async function LearnCoursePage({ params }: { params: Promise<{ co
           </li>
         ))}
       </ol>
+
+      {assessments.length > 0 && (
+        <section className="grid gap-2">
+          <h2 className="text-xl font-semibold">Bài kiểm tra</h2>
+          <ul className="grid gap-2">
+            {assessments.map((assessment) => (
+              <li key={assessment.id}>
+                <Link
+                  href={`/learn/${course.slug}/assessments/${assessment.id}`}
+                  className="flex items-center gap-3 rounded-xl border p-3 hover:border-primary"
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-medium">{assessment.title}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {ASSESSMENT_KIND_LABELS[assessment.kind as AssessmentKindName]} · {assessment.durationMinutes} phút
+                    </span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }

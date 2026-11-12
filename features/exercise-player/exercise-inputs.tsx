@@ -2,36 +2,10 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { BLANK } from "@/features/exercises/exercise-content";
+import type { Draft } from "./exercise-draft";
 import type { LearnerExercise } from "./learner-exercise";
-
-/** The learner's in-progress answer; the fields used depend on the exercise type. */
-export type Draft = { selected: number[]; answers: string[]; matches: number[]; tokens: string[]; used: number[] };
-
-export const emptyDraft = (exercise: LearnerExercise): Draft => ({
-  selected: [],
-  answers: (exercise.text ?? "").split(BLANK).slice(1).map(() => ""),
-  matches: (exercise.left ?? []).map(() => -1),
-  tokens: [],
-  used: [],
-});
-
-/** The response sent to the server, or null while the answer is incomplete. */
-export function toResponse(exercise: LearnerExercise, draft: Draft): unknown | null {
-  switch (exercise.type) {
-    case "multiple_choice":
-    case "listening":
-      return draft.selected.length ? { selected: draft.selected } : null;
-    case "fill_blank":
-      return draft.answers.every((a) => a.trim()) ? { answers: draft.answers } : null;
-    case "matching":
-      return draft.matches.every((m) => m >= 0) ? { matches: draft.matches } : null;
-    case "ordering":
-      return draft.tokens.length === (exercise.tokens ?? []).length ? { tokens: draft.tokens } : null;
-    default:
-      return null;
-  }
-}
 
 type Props = { exercise: LearnerExercise; draft: Draft; onChange: (draft: Draft) => void; disabled: boolean };
 const selectClass = "h-9 min-w-0 flex-1 rounded-lg border border-input bg-background px-2 text-sm";
@@ -144,5 +118,24 @@ export function ExerciseInputs({ exercise, draft, onChange, disabled }: Props) {
     );
   }
 
-  return <p className="text-sm text-muted-foreground">Loại bài này do teacher chấm và sẽ mở ở phần bài kiểm tra.</p>;
+  if (exercise.type === "writing") {
+    const words = draft.text.trim() ? draft.text.trim().split(/\s+/).length : 0;
+    return (
+      <div className="grid gap-1">
+        <Textarea
+          aria-label="Bài viết của bạn"
+          rows={8}
+          maxLength={10_000}
+          disabled={disabled}
+          value={draft.text}
+          onChange={(e) => onChange({ ...draft, text: e.target.value })}
+        />
+        <p className="text-xs text-muted-foreground tabular-nums">
+          {words} từ{exercise.minWords ? ` · tối thiểu ${exercise.minWords} từ` : ""} · teacher sẽ chấm bài này
+        </p>
+      </div>
+    );
+  }
+
+  return <p className="text-sm text-muted-foreground">Bài nói cần thu âm, tính năng này chưa mở.</p>;
 }

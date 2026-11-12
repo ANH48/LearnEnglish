@@ -4,7 +4,9 @@
 - [plan.md](plan.md) · [phase-02](phase-02-learner-enrollment-lessons-auto-grading.md) · Spec Luồng 5
 
 ## Overview
-- Priority: P1. Status: pending. Phụ thuộc phase 02.
+- Priority: P1. Status: complete trừ bài nói + R2 (12/11/2026). Phụ thuộc phase 02.
+- Còn lại: `lib/storage` (R2 presign), speaking player, nghe thu âm khi chấm. Chờ user cấp tài khoản Cloudflare R2. Bài nói hiện không chọn được vào bài kiểm tra.
+- Lệch so với thiết kế ban đầu: trang soạn bài kiểm tra nằm ở `/admin/courses/[id]/assessments/[assessmentId]` (theo mẫu bài học), danh sách ở `/admin/assessments`; bảng điểm là một trang ma trận học viên × bài kiểm tra theo khóa.
 - Bài test nhẹ (quiz_15, test_60, custom), bài thi có lịch (exam), tính giờ server, chấm tay writing/speaking, bảng điểm. Upload R2 (thu âm) bắt đầu từ phase này.
 
 ## Key Insights
@@ -48,15 +50,16 @@ app/(learner)/learn/[courseSlug]/assessments/[id]/{page,take,result}
 11. Test: tính deadline, từ chối trễ hạn, giới hạn lượt, finalize lười.
 
 ## Todo
-- [ ] R2 storage lib + presign API
-- [ ] CRUD assessment
-- [ ] Start attempt + guard
-- [ ] Trang làm bài + autosave + timer
-- [ ] Submit + finalize lười
-- [ ] Writing/speaking player
-- [ ] Chấm tay
-- [ ] Kết quả + bảng điểm
-- [ ] Test + typecheck
+- [ ] R2 storage lib + presign API (chờ tài khoản R2)
+- [x] CRUD assessment
+- [x] Start attempt + guard
+- [x] Trang làm bài + autosave + timer
+- [x] Submit + finalize lười
+- [x] Writing player
+- [ ] Speaking player (chờ R2)
+- [x] Chấm tay (bài viết)
+- [x] Kết quả + bảng điểm
+- [x] Test + typecheck
 
 ## Success Criteria
 - Exam chỉ mở trong khung giờ, chỉ cho học viên approved, đúng 1 lần.

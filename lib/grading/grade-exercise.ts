@@ -31,6 +31,19 @@ export function parseResponse(type: string, response: unknown): Record<string, u
   return parsed.success ? parsed.data : null;
 }
 
+/** Types a teacher grades by hand. */
+export function needsManualGrading(type: string): boolean {
+  return type === "writing" || type === "speaking";
+}
+
+const writingSchema = z.object({ text: z.string().max(10_000).refine((value) => !value.includes("\u0000")) });
+
+/** A written answer with unknown fields removed, or null when it is not one. */
+export function parseWritingResponse(response: unknown): { text: string } | null {
+  const parsed = writingSchema.safeParse(response);
+  return parsed.success ? parsed.data : null;
+}
+
 export type ExerciseResponse = { [K in AutoGradedType]: z.infer<(typeof responseSchemas)[K]> };
 export type Graded = { ratio: number; parts: boolean[] };
 

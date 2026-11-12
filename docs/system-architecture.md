@@ -1,6 +1,6 @@
 # System architecture
 
-Trạng thái: giai đoạn 1 và 2 xong. Phần chưa làm ghi rõ "(giai đoạn N)".
+Trạng thái: giai đoạn 1, 2 xong; giai đoạn 3 xong trừ bài nói. Phần chưa làm ghi rõ "(giai đoạn N)".
 
 ## Thành phần
 
@@ -8,7 +8,7 @@ Trạng thái: giai đoạn 1 và 2 xong. Phần chưa làm ghi rõ "(giai đo�
 |---|---|
 | Next.js trên Vercel | Giao diện + server actions. Mọi trang admin render theo request. |
 | PostgreSQL (Supabase) | Dữ liệu chính, qua Prisma. `DATABASE_URL` = pooler, `DIRECT_URL` = kết nối trực tiếp cho migration. |
-| Cloudflare R2 | PDF, audio, bài thu âm (giai đoạn 3) |
+| Cloudflare R2 | PDF, audio, bài thu âm (chưa nối; bài nói chờ phần này) |
 | MongoDB Atlas | Prompt, version, history (giai đoạn 4) |
 | Bridge trên máy user | Script theo dõi job + phiên Claude Code (giai đoạn 4) |
 
@@ -46,7 +46,20 @@ Tài khoản và nội dung dùng xóa mềm (`deleted_at`); email và slug củ
 - Chấm tự động (`lib/grading/grade-exercise.ts`): trắc nghiệm, nghe và sắp xếp câu là đúng hết mới có điểm; điền từ và nối cặp tính điểm theo từng phần. Bỏ qua hoa thường, khoảng trắng thừa, dấu nháy cong.
 - Bài luyện trong bài học lưu vào `answers` với `attempt_id` rỗng, mỗi học viên một dòng mới nhất cho mỗi bài tập.
 - Tiến độ: `lesson_progress`, học viên tự đánh dấu học xong. Bài học không khóa tuần tự.
-- Chưa có: bài viết và nói (giai đoạn 3), audio bài nghe (giai đoạn 5).
+- Bài viết trong bài học: học viên nộp chữ, lưu vào `answers` chưa có điểm và vào hàng chờ chấm; nộp lại thì xóa điểm cũ.
+- Chưa có: bài nói (chờ R2), audio bài nghe (giai đoạn 5).
+
+## Bài kiểm tra và bài thi
+
+- `assessments` thuộc một khóa học; câu hỏi là bài tập của khóa đó, nối qua `assessment_exercises` (điểm và thứ tự riêng cho từng bài kiểm tra). Một bài tập dùng được ở cả bài học lẫn bài kiểm tra. Bài nói chưa chọn được.
+- Bốn loại (`lib/assessments/attempt-rules.ts`): 15 phút và 60 phút có thời lượng cố định; tự đặt giờ; bài thi có giờ mở/đóng, đúng 1 lượt, đáp án ẩn tới giờ đóng. Giờ mở/đóng nhập theo giờ Việt Nam, lưu UTC (`lib/datetime/vietnam-time.ts`).
+- Bắt đầu làm (`features/attempts/attempt-actions.ts`): server tính `deadline_at = started_at + thời lượng`, bài thi không vượt giờ đóng. Khóa advisory theo học viên + bài để hai lần bấm cùng lúc không tạo hai lượt.
+- Trong lúc làm: mỗi thay đổi được tự lưu từng câu (upsert theo `attempt_id + exercise_id`), nên đóng tab rồi mở lại vẫn còn bài và đồng hồ đúng. Server từ chối lưu sau hạn (cho trễ 10 giây vì mạng).
+- Nộp bài (`features/attempts/finalize-attempt.ts`): chấm tự động theo điểm của bài kiểm tra; còn bài viết chờ chấm thì lượt ở trạng thái `submitted`, không thì `graded`. Chỉ lần gọi đổi được `in_progress` mới chấm, nên gọi hai lần cùng lúc vẫn an toàn.
+- Không có cron: lượt quá hạn chưa nộp được chốt ở lần đọc kế tiếp (học viên mở trang bài kiểm tra, teacher mở hàng chờ chấm hoặc bảng điểm), tính là nộp đúng lúc hết hạn.
+- Sau khi có học viên bắt đầu làm, danh sách câu hỏi và điểm từng câu bị khóa.
+- Chấm tay (`features/manual-grading/`, quyền `grading.manual`): hàng chờ gồm bài viết từ bài học và từ lượt đã nộp, giới hạn theo phạm vi khóa học. Lưu điểm xong thì tính lại tổng điểm của lượt: điểm cuối = tự động + chấm tay.
+- Bảng điểm (`/admin/gradebook`): theo khóa, mỗi dòng một học viên đã duyệt, mỗi cột một bài kiểm tra, ô là điểm cao nhất trong các lượt đã nộp.
 
 ## Cấu trúc thư mục
 
@@ -57,6 +70,9 @@ app/blocked                trang báo khi vào nhầm khu
 app/page.tsx, app/courses  landing và trang khóa học công khai
 app/(auth)/                đăng nhập, đăng ký học viên
 app/learn/                 khu học viên (layout yêu cầu phiên customer)
+app/learn/[courseSlug]/assessments/   trang bài kiểm tra, làm bài, kết quả
+lib/assessments/           luật giờ, số lượt, tính điểm của lượt làm
+lib/datetime/              đổi giờ Việt Nam ↔ UTC
 lib/grading/               chấm tự động
 components/site/           header trang công khai và khu học viên
 features/<tên>/            server actions, form, bảng của từng thực thể

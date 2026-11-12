@@ -9,7 +9,7 @@ export type LearnerExercise = {
   type: string;
   prompt: string;
   points: number;
-  /** False for writing and speaking, which arrive with teacher grading in phase 03. */
+  /** False for writing and speaking, which a teacher grades. */
   autoGraded: boolean;
   options?: string[];
   /** Whether more than one option may be ticked. */
@@ -18,6 +18,8 @@ export type LearnerExercise = {
   left?: string[];
   right?: string[];
   tokens?: string[];
+  /** Writing only: the length the teacher asks for. */
+  minWords?: number;
 };
 
 type StoredExercise = { id: string; type: string; prompt: string; points: number; data: unknown; answerKey: unknown };
@@ -46,6 +48,8 @@ export function toLearnerExercise(exercise: StoredExercise): LearnerExercise {
       return { ...base, left: strings(data.left), right: strings(data.right) };
     case "ordering":
       return { ...base, tokens: strings(data.tokens) };
+    case "writing":
+      return { ...base, minWords: typeof data.minWords === "number" ? data.minWords : 0 };
     default:
       return base;
   }
@@ -79,6 +83,33 @@ function solutionUnchecked(exercise: StoredExercise): string {
         .join("; ");
     case "ordering":
       return strings(key.tokens).join(" ");
+    default:
+      return "";
+  }
+}
+
+/** A stored response in a readable form, for result pages and for the teacher. Empty when nothing was answered. */
+export function responseText(exercise: StoredExercise, response: unknown): string {
+  const data = (exercise.data ?? {}) as Record<string, unknown>;
+  const given = (typeof response === "object" && response !== null ? response : {}) as Record<string, unknown>;
+  const indexes = (value: unknown): number[] => (Array.isArray(value) ? value.filter((v) => typeof v === "number") : []);
+  switch (exercise.type) {
+    case "multiple_choice":
+    case "listening":
+      return indexes(given.selected).map((i) => strings(data.options)[i] ?? "").filter(Boolean).join("; ");
+    case "fill_blank":
+      return strings(given.answers).some((a) => a.trim()) ? strings(given.answers).map((a) => a.trim() || "(trống)").join("; ") : "";
+    case "matching": {
+      const matches = indexes(given.matches);
+      return strings(data.left)
+        .map((left, i) => (matches[i] >= 0 && strings(data.right)[matches[i]] !== undefined ? `${left} = ${strings(data.right)[matches[i]]}` : ""))
+        .filter(Boolean)
+        .join("; ");
+    }
+    case "ordering":
+      return strings(given.tokens).join(" ");
+    case "writing":
+      return typeof given.text === "string" ? given.text : "";
     default:
       return "";
   }

@@ -1,9 +1,11 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { type Draft, ExerciseInputs, emptyDraft, toResponse } from "./exercise-inputs";
+import { type Draft, draftFromResponse, emptyDraft, toResponse } from "./exercise-draft";
+import { ExerciseInputs } from "./exercise-inputs";
 import type { LearnerExercise } from "./learner-exercise";
 import { type SubmitResult, submitExerciseAnswerAction } from "./submit-answer-action";
 
@@ -12,13 +14,23 @@ type Props = {
   index: number;
   /** Score of the learner's last submission, if any. */
   lastScore: number | null;
+  /** Writing only: the text sent earlier and the teacher's grade, once given. */
+  written?: { response: unknown; score: number | null; feedback: string };
 };
 
 /** One practice exercise: answer, submit, see the score and the right answer, try again. */
-export function ExercisePlayer({ exercise, index, lastScore }: Props) {
-  const [draft, setDraft] = useState<Draft>(() => emptyDraft(exercise));
+export function ExercisePlayer({ exercise, index, lastScore, written }: Props) {
+  const [draft, setDraft] = useState<Draft>(() => (written ? draftFromResponse(exercise, written.response) : emptyDraft(exercise)));
   const [result, setResult] = useState<SubmitResult | null>(null);
   const [pending, startTransition] = useTransition();
+  const router = useRouter();
+  const submit = () =>
+    startTransition(async () => {
+      const submitted = await submitExerciseAnswerAction(exercise.id, response);
+      setResult(submitted);
+      // Reload the stored text and clear the old grade shown for a written answer.
+      if (submitted.ok && submitted.waiting) router.refresh();
+    });
   const response = toResponse(exercise, draft);
   const done = result?.ok === true;
 
@@ -44,7 +56,19 @@ export function ExercisePlayer({ exercise, index, lastScore }: Props) {
             {result.error}
           </p>
         )}
-        {result?.ok && (
+        {written && !result && (
+          <p role="status" className="rounded-lg border p-3 text-sm">
+            {written.score === null
+              ? "Bài đã nộp, đang chờ teacher chấm."
+              : `Teacher đã chấm: ${written.score}/${exercise.points}${written.feedback ? ` · ${written.feedback}` : ""}`}
+          </p>
+        )}
+        {result?.ok && result.waiting && (
+          <p role="status" className="rounded-lg border p-3 text-sm">
+            Đã nộp. Teacher sẽ chấm bài này.
+          </p>
+        )}
+        {result?.ok && !result.waiting && (
           <div role="status" className="rounded-lg border p-3 text-sm">
             <p className="font-medium">
               {result.score === result.points ? "Đúng rồi!" : result.score > 0 ? "Đúng một phần." : "Chưa đúng."} Điểm:{" "}
@@ -56,26 +80,26 @@ export function ExercisePlayer({ exercise, index, lastScore }: Props) {
           </div>
         )}
 
-        {exercise.autoGraded && (
+        {(exercise.autoGraded || exercise.type === "writing") && (
           <div className="flex gap-2">
             {!done ? (
               <Button
                 type="button"
                 disabled={pending || response === null}
-                onClick={() => startTransition(async () => setResult(await submitExerciseAnswerAction(exercise.id, response)))}
+                onClick={submit}
               >
-                {pending ? "Đang chấm…" : "Nộp câu trả lời"}
+                {pending ? "Đang nộp…" : written ? "Nộp lại" : "Nộp câu trả lời"}
               </Button>
             ) : (
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => {
-                  setDraft(emptyDraft(exercise));
+                  if (exercise.autoGraded) setDraft(emptyDraft(exercise));
                   setResult(null);
                 }}
               >
-                Làm lại
+                {exercise.autoGraded ? "Làm lại" : "Sửa bài"}
               </Button>
             )}
           </div>

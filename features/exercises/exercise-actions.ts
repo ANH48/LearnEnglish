@@ -71,6 +71,10 @@ export async function saveExerciseAction(
     ? await db.exercise.findFirst({ where: { id: exerciseId, courseId, deletedAt: null } })
     : null;
   if (exerciseId && !existing) return { error: "Không tìm thấy bài tập." };
+  // Answers already handed in were graded as the old type; changing it would turn them into something else.
+  if (existing && existing.type !== type && (await db.attempt.count({ where: { assessment: { exercises: { some: { exerciseId: existing.id } } } } })) > 0) {
+    return { error: "Bài tập này nằm trong bài kiểm tra đã có học viên làm, không đổi loại được." };
+  }
 
   // A new exercise, or one moved to another lesson, goes to the end of its new list.
   let position = existing?.position ?? 0;
@@ -96,10 +100,11 @@ export async function saveExerciseAction(
 export async function deleteExerciseAction(courseId: string, exerciseId: string): Promise<void> {
   const actor = await requireCourseAccess("course.manage", courseId);
   requireUuid(exerciseId);
-  await db.exercise.updateMany({
-    where: { id: exerciseId, courseId, deletedAt: null },
-    data: { deletedAt: new Date() },
-  });
+  await db.$transaction([
+    db.exercise.updateMany({ where: { id: exerciseId, courseId, deletedAt: null }, data: { deletedAt: new Date() } }),
+    // It leaves tests nobody has started. Tests with attempts keep it, so their scores and totals still match.
+    db.assessmentExercise.deleteMany({ where: { exerciseId, exercise: { courseId }, assessment: { attempts: { none: {} } } } }),
+  ]);
   await writeAuditLog(actor.id, "exercise.delete", "exercise", exerciseId, { courseId });
   revalidatePath(`/admin/courses/${courseId}`, "layout");
 }

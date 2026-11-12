@@ -20,7 +20,7 @@ Next.js App Router + TS · shadcn/ui + Tailwind · PostgreSQL (Supabase, chỉ d
 |---|---|---|---|
 | 1 | Nền: setup, auth 2 phía, group quyền, CRUD nội dung, khung admin | complete | [phase-01](phase-01-foundation-auth-permissions-content-crud.md) |
 | 2 | Học viên: landing, đăng ký, xin vào khóa, duyệt, học, chấm tự động | complete | [phase-02](phase-02-learner-enrollment-lessons-auto-grading.md) |
-| 3 | Kiểm tra + thi: tính giờ, lịch thi, chấm tay, bảng điểm | pending | [phase-03](phase-03-assessments-exams-manual-grading.md) |
+| 3 | Kiểm tra + thi: tính giờ, lịch thi, chấm tay, bảng điểm | complete trừ bài nói + R2 | [phase-03](phase-03-assessments-exams-manual-grading.md) |
 | 4 | AI: bridge worker, PDF → bản nháp | pending | [phase-04](phase-04-ai-bridge-pdf-to-draft.md) |
 | 5 | Voice UK 3 tốc độ | pending | [phase-05](phase-05-uk-voice-tts-three-speeds.md) |
 

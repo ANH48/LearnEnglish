@@ -28,7 +28,7 @@ export default async function LearnLessonPage({ params }: Props) {
             answers: {
               where: { customerId: customer.id, attemptId: null },
               orderBy: { updatedAt: "desc" },
-              select: { autoScore: true },
+              select: { autoScore: true, manualScore: true, feedback: true, response: true },
               take: 1,
             },
           },
@@ -70,6 +70,15 @@ export default async function LearnLessonPage({ params }: Props) {
               index={index}
               exercise={toLearnerExercise(exercise)}
               lastScore={exercise.answers[0]?.autoScore != null ? Number(exercise.answers[0].autoScore) : null}
+              written={
+                exercise.type === "writing" && exercise.answers[0]
+                  ? {
+                      response: exercise.answers[0].response,
+                      score: exercise.answers[0].manualScore != null ? Number(exercise.answers[0].manualScore) : null,
+                      feedback: exercise.answers[0].feedback,
+                    }
+                  : undefined
+              }
             />
           ))}
         </section>
