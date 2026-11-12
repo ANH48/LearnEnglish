@@ -12,7 +12,7 @@ Web học tiếng Anh cho lớp riêng: teacher soạn khóa học, bài học, 
 |---|---|---|
 | 1 | Đăng nhập staff, group quyền, CRUD thể loại / khóa học / bài học / bài tập, khung admin | Xong |
 | 2 | Landing, đăng ký học viên, xin vào khóa, học, chấm tự động | Xong |
-| 3 | Bài kiểm tra, bài thi, chấm tay bài viết và bài nói, bảng điểm | Xong (thu âm mới thử với MinIO trên máy, chưa thử với Supabase Storage) |
+| 3 | Bài kiểm tra, bài thi, chấm tay bài viết và bài nói, bảng điểm | Xong (lưu file trên Supabase Storage) |
 | 4 | AI bridge, PDF thành bản nháp, prompt version (MongoDB) | Chưa làm |
 | 5 | Giọng đọc UK 3 tốc độ | Chưa làm |
 
@@ -24,19 +24,14 @@ Next.js 16 (App Router, TypeScript) · shadcn/ui + Tailwind 4 · PostgreSQL (Sup
 
 ```bash
 npm install
-cp .env.example .env        # điền chuỗi kết nối database và hai secret JWT
-# Chưa có Supabase: chạy Postgres tạm bằng Docker, khớp với DATABASE_URL postgresql://le@127.0.0.1:54329/learnenglish
-# docker run -d --name learnenglish-postgres -e POSTGRES_USER=le -e POSTGRES_DB=learnenglish -e POSTGRES_HOST_AUTH_METHOD=trust -p 127.0.0.1:54329:5432 postgres:17-alpine
-# Lưu file (thu âm bài nói) qua S3 API. Trên máy dùng MinIO, khớp với các biến S3_* trong .env:
-# docker run -d --name learnenglish-minio -e MINIO_ROOT_USER=<S3_ACCESS_KEY_ID> -e MINIO_ROOT_PASSWORD=<S3_SECRET_ACCESS_KEY> -p 127.0.0.1:54330:9000 -p 127.0.0.1:54331:9001 pgsty/silo:RELEASE.2026-09-16T00-00-00Z server --console-address :9001 /data
-# npx tsx --env-file=.env scripts/create-storage-bucket.ts
+cp .env.example .env        # điền chuỗi kết nối Supabase, 5 biến S3_* và hai secret JWT (hướng dẫn trong file)
 npm run db:deploy           # tạo bảng
 npm run db:seed             # tạo superadmin đầu tiên và 2 group mẫu
 npm run dev                 # http://localhost:3000 (học viên), /admin/login (staff)
 ```
 
-Khi deploy: dùng tạm Supabase Storage qua S3 API.
-1. Dashboard → Storage → tạo bucket **private**, giới hạn 15 MB, MIME `audio/webm, audio/ogg, audio/mp4`.
+Database và file đều nằm trên Supabase, kể cả khi chạy trên máy; không cần Docker. Lưu file dùng Supabase Storage qua S3 API:
+1. Dashboard → Storage → tạo bucket **private**, giới hạn 15 MB, MIME `audio/webm, audio/ogg, audio/mp4, audio/mpeg`.
 2. Storage → S3 Configuration: bật S3 connection, tạo access key.
 3. Điền 5 biến `S3_*`: endpoint `https://<project-ref>.storage.supabase.co/storage/v1/s3`, region đúng region của project (ghi trên trang đó), key vừa tạo, tên bucket.
 

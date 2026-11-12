@@ -1,6 +1,6 @@
 // Creates the storage bucket named in S3_BUCKET if it does not exist yet.
 // Needed once for local MinIO. On Supabase create the bucket in the dashboard instead
-// (private, size limit 15 MB, MIME types audio/webm, audio/ogg, audio/mp4).
+// (private, size limit 15 MB, MIME types audio/webm, audio/ogg, audio/mp4, audio/mpeg).
 // Run from the repo root: npx tsx --env-file=.env scripts/create-storage-bucket.ts
 import { CreateBucketCommand, HeadBucketCommand, S3Client } from "@aws-sdk/client-s3";
 
