@@ -20,6 +20,7 @@ export const NAV_GROUPS: { title: string | null; items: NavItem[] }[] = [
       { href: "/admin/enrollments", label: "Duyệt đăng ký", permission: "enrollment.review" },
       { href: "/admin/grading", label: "Chấm bài", permission: "grading.manual" },
       { href: "/admin/gradebook", label: "Bảng điểm", permission: "grading.manual" },
+      { href: "/admin/submissions", label: "Lượt nộp bài", permission: "grading.manual" },
       { href: "/admin/customers", label: "Học viên", permission: "customer.manage" },
     ],
   },

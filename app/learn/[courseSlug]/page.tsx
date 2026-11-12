@@ -1,5 +1,7 @@
+import { CheckCircle2, Circle } from "lucide-react";
 import Link from "next/link";
 import { ASSESSMENT_KIND_LABELS, type AssessmentKindName } from "@/lib/assessments/attempt-rules";
+import { lessonExerciseCounts } from "@/features/progress/lesson-exercise-completion";
 import { ProgressBar } from "@/features/progress/progress-bar";
 import { requireApprovedCourse } from "@/lib/auth/current-customer";
 import { db } from "@/lib/db";
@@ -21,9 +23,9 @@ export default async function LearnCoursePage({ params }: { params: Promise<{ co
       id: true,
       title: true,
       progress: { where: { customerId: customer.id }, select: { lessonId: true } },
-      _count: { select: { exercises: { where: { deletedAt: null, status: "published" } } } },
     },
   });
+  const counts = await lessonExerciseCounts(customer.id, lessons.map((lesson) => lesson.id));
   const done = lessons.filter((lesson) => lesson.progress.length > 0).length;
 
   return (
@@ -47,9 +49,9 @@ export default async function LearnCoursePage({ params }: { params: Promise<{ co
               <span className="w-6 text-center text-sm text-muted-foreground tabular-nums">{index + 1}</span>
               <span className="min-w-0 flex-1">
                 <span className="block font-medium">{lesson.title}</span>
-                <span className="text-xs text-muted-foreground">{lesson._count.exercises} bài tập</span>
+                <ExerciseCountLabel count={counts.get(lesson.id)} />
               </span>
-              {lesson.progress.length > 0 && <span className="text-sm text-primary">Đã học xong</span>}
+              <DoneMark done={lesson.progress.length > 0} />
             </Link>
           </li>
         ))}
@@ -78,5 +80,29 @@ export default async function LearnCoursePage({ params }: { params: Promise<{ co
         </section>
       )}
     </div>
+  );
+}
+
+function ExerciseCountLabel({ count }: { count?: { answered: number; total: number } }) {
+  if (!count || count.total === 0) return <span className="text-xs text-muted-foreground">Không có bài tập</span>;
+  return (
+    <span className="text-xs text-muted-foreground tabular-nums">
+      Đã làm {count.answered}/{count.total} bài tập
+    </span>
+  );
+}
+
+/** Green tick once the lesson is done (every exercise submitted, or marked done by the learner). */
+function DoneMark({ done }: { done: boolean }) {
+  return done ? (
+    <span className="flex items-center gap-1 text-sm font-medium text-emerald-600 dark:text-emerald-400">
+      <CheckCircle2 className="size-5" aria-hidden />
+      Đã học
+    </span>
+  ) : (
+    <span className="flex items-center gap-1 text-sm text-muted-foreground">
+      <Circle className="size-5" aria-hidden />
+      Chưa học
+    </span>
   );
 }

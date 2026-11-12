@@ -66,7 +66,7 @@ export async function submitExerciseAnswerAction(exerciseId: string, response: u
   if (!cleaned || !graded) return invalid;
   const score = scoreFor(graded.ratio, exercise.points);
 
-  await saveLatestPracticeAnswer(customer.id, exerciseId, { response: cleaned as Prisma.InputJsonObject, autoScore: score });
+  await saveLatestPracticeAnswer(customer.id, exerciseId, { response: cleaned as Prisma.InputJsonObject, autoScore: score, parts: graded.parts });
   return { ok: true, waiting: false, score, points: exercise.points, parts: graded.parts, solution: solutionText(exercise) };
 }
 

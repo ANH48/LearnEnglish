@@ -147,6 +147,7 @@ model Customer {
   attempts       Attempt[]
   answers        Answer[]
   lessonProgress LessonProgress[]
+  submissions    PracticeSubmission[]
 
   @@map("customers")
 }
@@ -184,6 +185,7 @@ model Course {
   enrollments Enrollment[]
   assessments Assessment[]
   aiJobs      AiJob[]
+  submissions PracticeSubmission[]
 
   @@map("courses")
 }
@@ -225,10 +227,11 @@ model Lesson {
   updatedAt   DateTime      @updatedAt @map("updated_at")
   deletedAt   DateTime?     @map("deleted_at")
 
-  course    Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  sourcePdf MediaFile?       @relation(fields: [sourcePdfId], references: [id])
-  exercises Exercise[]
-  progress  LessonProgress[]
+  course      Course               @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  sourcePdf   MediaFile?           @relation(fields: [sourcePdfId], references: [id])
+  exercises   Exercise[]
+  progress    LessonProgress[]
+  submissions PracticeSubmission[]
 
   @@index([courseId, position])
   @@map("lessons")
@@ -254,6 +257,7 @@ model Exercise {
   audios      ExerciseAudio[]
   assessments AssessmentExercise[]
   answers     Answer[]
+  submissions PracticeSubmission[]
 
   @@index([courseId])
   @@index([lessonId, position])
@@ -385,6 +389,30 @@ model Answer {
   @@unique([attemptId, exerciseId])
   @@index([customerId, exerciseId])
   @@map("answers")
+}
+
+// Every practice submit inside a lesson, kept as history for the teacher (answers only keep the latest).
+// score is null while a teacher still has to grade it (writing, speaking, fill-in marked "teacher grades").
+model PracticeSubmission {
+  id         String   @id @default(uuid()) @db.Uuid
+  customerId String   @map("customer_id") @db.Uuid
+  exerciseId String   @map("exercise_id") @db.Uuid
+  courseId   String   @map("course_id") @db.Uuid
+  lessonId   String?  @map("lesson_id") @db.Uuid
+  response   Json     @default("{}")
+  score      Decimal? @db.Decimal(7, 2)
+  maxPoints  Int      @map("max_points")
+  parts      Json     @default("[]") // right/wrong per blank or pair, empty when graded as a whole or by hand
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  exercise Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lesson   Lesson?  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([courseId, createdAt])
+  @@index([customerId, createdAt])
+  @@map("practice_submissions")
 }
 
 model LessonProgress {
