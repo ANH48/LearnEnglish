@@ -1,6 +1,6 @@
 # System architecture
 
-Trạng thái: giai đoạn 1, 2 xong; giai đoạn 3 xong trừ bài nói. Phần chưa làm ghi rõ "(giai đoạn N)".
+Trạng thái: giai đoạn 1, 2, 3 xong. Phần chưa làm ghi rõ "(giai đoạn N)".
 
 ## Thành phần
 
@@ -8,7 +8,7 @@ Trạng thái: giai đoạn 1, 2 xong; giai đoạn 3 xong trừ bài nói. Ph�
 |---|---|
 | Next.js trên Vercel | Giao diện + server actions. Mọi trang admin render theo request. |
 | PostgreSQL (Supabase) | Dữ liệu chính, qua Prisma. `DATABASE_URL` = pooler, `DIRECT_URL` = kết nối trực tiếp cho migration. |
-| Cloudflare R2 | PDF, audio, bài thu âm (chưa nối; bài nói chờ phần này) |
+| Lưu file qua S3 API | Bài thu âm; PDF và audio ở giai đoạn sau. MinIO trên máy, Supabase Storage (S3 protocol) khi deploy, sau này AWS S3 hoặc Cloudflare R2 khi data lớn; chỉ khác các biến `S3_*` |
 | MongoDB Atlas | Prompt, version, history (giai đoạn 4) |
 | Bridge trên máy user | Script theo dõi job + phiên Claude Code (giai đoạn 4) |
 
@@ -47,11 +47,12 @@ Tài khoản và nội dung dùng xóa mềm (`deleted_at`); email và slug củ
 - Bài luyện trong bài học lưu vào `answers` với `attempt_id` rỗng, mỗi học viên một dòng mới nhất cho mỗi bài tập.
 - Tiến độ: `lesson_progress`, học viên tự đánh dấu học xong. Bài học không khóa tuần tự.
 - Bài viết trong bài học: học viên nộp chữ, lưu vào `answers` chưa có điểm và vào hàng chờ chấm; nộp lại thì xóa điểm cũ.
-- Chưa có: bài nói (chờ R2), audio bài nghe (giai đoạn 5).
+- Bài nói trong bài học: thu âm xong là nộp, vào hàng chờ chấm; thu lại thì thay bản cũ.
+- Chưa có: audio bài nghe (giai đoạn 5).
 
 ## Bài kiểm tra và bài thi
 
-- `assessments` thuộc một khóa học; câu hỏi là bài tập của khóa đó, nối qua `assessment_exercises` (điểm và thứ tự riêng cho từng bài kiểm tra). Một bài tập dùng được ở cả bài học lẫn bài kiểm tra. Bài nói chưa chọn được.
+- `assessments` thuộc một khóa học; câu hỏi là bài tập của khóa đó, nối qua `assessment_exercises` (điểm và thứ tự riêng cho từng bài kiểm tra). Một bài tập dùng được ở cả bài học lẫn bài kiểm tra.
 - Bốn loại (`lib/assessments/attempt-rules.ts`): 15 phút và 60 phút có thời lượng cố định; tự đặt giờ; bài thi có giờ mở/đóng, đúng 1 lượt, đáp án ẩn tới giờ đóng. Giờ mở/đóng nhập theo giờ Việt Nam, lưu UTC (`lib/datetime/vietnam-time.ts`).
 - Bắt đầu làm (`features/attempts/attempt-actions.ts`): server tính `deadline_at = started_at + thời lượng`, bài thi không vượt giờ đóng. Khóa advisory theo học viên + bài để hai lần bấm cùng lúc không tạo hai lượt.
 - Trong lúc làm: mỗi thay đổi được tự lưu từng câu (upsert theo `attempt_id + exercise_id`), nên đóng tab rồi mở lại vẫn còn bài và đồng hồ đúng. Server từ chối lưu sau hạn (cho trễ 10 giây vì mạng).
@@ -59,6 +60,8 @@ Tài khoản và nội dung dùng xóa mềm (`deleted_at`); email và slug củ
 - Không có cron: lượt quá hạn chưa nộp được chốt ở lần đọc kế tiếp (học viên mở trang bài kiểm tra, teacher mở hàng chờ chấm hoặc bảng điểm), tính là nộp đúng lúc hết hạn.
 - Sau khi có học viên bắt đầu làm, danh sách câu hỏi và điểm từng câu bị khóa.
 - Chấm tay (`features/manual-grading/`, quyền `grading.manual`): hàng chờ gồm bài viết từ bài học và từ lượt đã nộp, giới hạn theo phạm vi khóa học. Lưu điểm xong thì tính lại tổng điểm của lượt: điểm cuối = tự động + chấm tay.
+- Bài nói (`features/recordings/`, `lib/storage/`): trình duyệt thu bằng MediaRecorder, xin server một URL ký sẵn (5 phút) rồi PUT thẳng file lên bucket. Server tự đặt key `recordings/<customer id>/<uuid>`, sau đó kiểm tra file thật trong bucket (có tồn tại, đúng loại audio, tối đa 15 MB) mới gắn vào câu trả lời qua `media_files`. Thu lại thì xóa file cũ.
+- Nghe lại qua `/api/recordings/[answerId]`: chỉ học viên đã thu hoặc teacher có quyền chấm trong khóa đó được chuyển tới URL ký sẵn; người khác nhận 404. Bucket không công khai.
 - Bảng điểm (`/admin/gradebook`): theo khóa, mỗi dòng một học viên đã duyệt, mỗi cột một bài kiểm tra, ô là điểm cao nhất trong các lượt đã nộp.
 
 ## Cấu trúc thư mục
@@ -73,6 +76,8 @@ app/learn/                 khu học viên (layout yêu cầu phiên customer)
 app/learn/[courseSlug]/assessments/   trang bài kiểm tra, làm bài, kết quả
 lib/assessments/           luật giờ, số lượt, tính điểm của lượt làm
 lib/datetime/              đổi giờ Việt Nam ↔ UTC
+lib/storage/               lưu file qua S3 API, luật cho bản thu âm
+app/api/recordings/        phát lại bản thu sau khi kiểm tra quyền
 lib/grading/               chấm tự động
 components/site/           header trang công khai và khu học viên
 features/<tên>/            server actions, form, bảng của từng thực thể

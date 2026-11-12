@@ -11,7 +11,7 @@ import { requirePermission } from "@/lib/auth/current-staff";
 import { db } from "@/lib/db";
 import { requireUuid } from "@/lib/forms/require-uuid";
 
-/** One written answer: read it, give a score and a comment. Grading again replaces the earlier grade. */
+/** One written or spoken answer: read or listen, give a score and a comment. Grading again replaces the earlier grade. */
 export default async function GradeAnswerPage({ params }: { params: Promise<{ answerId: string }> }) {
   const { answerId } = await params;
   const staff = await requirePermission("grading.manual");
@@ -38,10 +38,16 @@ export default async function GradeAnswerPage({ params }: { params: Promise<{ an
         </section>
         <section className="grid gap-1">
           <h2 className="font-semibold">Bài làm</h2>
-          <p className="rounded-xl border p-3 text-sm leading-6 whitespace-pre-wrap">{text || "(không có nội dung)"}</p>
-          <p className="text-xs text-muted-foreground tabular-nums">
-            {words} từ{minWords > 0 && ` · yêu cầu tối thiểu ${minWords} từ`}
-          </p>
+          {answer.mediaId ? (
+            <audio controls src={`/api/recordings/${answer.id}`} className="w-full" aria-label="Bản thu của học viên" />
+          ) : (
+            <>
+              <p className="rounded-xl border p-3 text-sm leading-6 whitespace-pre-wrap">{text || "(không có nội dung)"}</p>
+              <p className="text-xs text-muted-foreground tabular-nums">
+                {words} từ{minWords > 0 && ` · yêu cầu tối thiểu ${minWords} từ`}
+              </p>
+            </>
+          )}
         </section>
         <ActionForm action={gradeAnswerAction.bind(null, answer.id, answer.updatedAt.toISOString())} submitLabel="Lưu điểm">
           <FormField label={`Điểm (tối đa ${max})`} htmlFor="score">

@@ -29,9 +29,8 @@ export default async function AssessmentPage({ params }: { params: Promise<{ id:
       where: { id: assessmentId, courseId, deletedAt: null },
       include: { exercises: true, _count: { select: { attempts: true } } },
     }),
-    // Speaking needs recording, which is not available yet, so it cannot be picked.
     db.exercise.findMany({
-      where: { courseId, deletedAt: null, type: { not: "speaking" } },
+      where: { courseId, deletedAt: null },
       orderBy: [{ lesson: { position: "asc" } }, { position: "asc" }, { createdAt: "asc" }],
       select: { id: true, prompt: true, type: true, points: true, lesson: { select: { title: true } } },
     }),

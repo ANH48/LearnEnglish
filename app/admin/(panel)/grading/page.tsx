@@ -7,7 +7,7 @@ import { requirePermission } from "@/lib/auth/current-staff";
 import { db } from "@/lib/db";
 import { courseScopeWhere } from "@/lib/permissions/course-scope";
 
-/** Written answers waiting for a teacher, oldest first. */
+/** Written and spoken answers waiting for a teacher, oldest first. */
 export default async function GradingQueuePage() {
   const staff = await requirePermission("grading.manual");
   // Attempts that ran out of time are closed here, so their written answers show up.
@@ -25,7 +25,7 @@ export default async function GradingQueuePage() {
 
   return (
     <>
-      <PageHeader title="Chấm bài" description="Bài viết đang chờ chấm, bài nộp trước xếp trước." />
+      <PageHeader title="Chấm bài" description="Bài viết và bài nói đang chờ chấm, bài nộp trước xếp trước." />
       {answers.length === 0 ? (
         <p className="text-sm text-muted-foreground">Không có bài nào đang chờ chấm.</p>
       ) : (

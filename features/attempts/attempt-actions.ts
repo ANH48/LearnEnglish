@@ -9,16 +9,10 @@ import { db } from "@/lib/db";
 import type { ActionState } from "@/lib/forms/action-state";
 import { isAutoGraded, parseResponse, parseWritingResponse } from "@/lib/grading/grade-exercise";
 import { finalizeAttempt, finalizeExpiredAttempts } from "./finalize-attempt";
+import { takeableBy } from "./learner-assessment";
 
 const uuid = z.uuid();
 const isUuid = (value: unknown): value is string => uuid.safeParse(value).success;
-
-/** Limits a query to assessments this learner may take: published, in a published course they are approved for. */
-const takeableBy = (customerId: string): Prisma.AssessmentWhereInput => ({
-  deletedAt: null,
-  status: "published",
-  course: { deletedAt: null, status: "published", enrollments: { some: { customerId, status: "approved" } } },
-});
 
 /** Starts a new attempt, or goes back to the one still running. The deadline is fixed here, on the server. */
 export async function startAttemptAction(assessmentId: string): Promise<ActionState> {

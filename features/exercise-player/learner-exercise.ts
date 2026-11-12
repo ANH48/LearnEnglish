@@ -20,6 +20,8 @@ export type LearnerExercise = {
   tokens?: string[];
   /** Writing only: the length the teacher asks for. */
   minWords?: number;
+  /** Speaking only: the longest recording allowed. */
+  maxSeconds?: number;
 };
 
 type StoredExercise = { id: string; type: string; prompt: string; points: number; data: unknown; answerKey: unknown };
@@ -50,6 +52,8 @@ export function toLearnerExercise(exercise: StoredExercise): LearnerExercise {
       return { ...base, tokens: strings(data.tokens) };
     case "writing":
       return { ...base, minWords: typeof data.minWords === "number" ? data.minWords : 0 };
+    case "speaking":
+      return { ...base, maxSeconds: typeof data.maxSeconds === "number" ? data.maxSeconds : 60 };
     default:
       return base;
   }

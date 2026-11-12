@@ -137,5 +137,5 @@ export function ExerciseInputs({ exercise, draft, onChange, disabled }: Props) {
     );
   }
 
-  return <p className="text-sm text-muted-foreground">Bài nói cần thu âm, tính năng này chưa mở.</p>;
+  return <p className="text-sm text-muted-foreground">Loại bài này chưa làm được ở đây.</p>;
 }

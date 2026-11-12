@@ -4,8 +4,8 @@
 - [plan.md](plan.md) · [phase-02](phase-02-learner-enrollment-lessons-auto-grading.md) · Spec Luồng 5
 
 ## Overview
-- Priority: P1. Status: complete trừ bài nói + R2 (12/11/2026). Phụ thuộc phase 02.
-- Còn lại: `lib/storage` (R2 presign), speaking player, nghe thu âm khi chấm. Chờ user cấp tài khoản Cloudflare R2. Bài nói hiện không chọn được vào bài kiểm tra.
+- Priority: P1. Status: complete (12/11/2026). Phụ thuộc phase 02.
+- Lưu file dùng S3 API: MinIO trên máy, deploy dùng tạm Supabase Storage qua S3 protocol (chưa thử thật), sau này S3/R2 khi data lớn. Upload đi qua server action + URL ký sẵn thay cho `app/api/uploads/presign`.
 - Lệch so với thiết kế ban đầu: trang soạn bài kiểm tra nằm ở `/admin/courses/[id]/assessments/[assessmentId]` (theo mẫu bài học), danh sách ở `/admin/assessments`; bảng điểm là một trang ma trận học viên × bài kiểm tra theo khóa.
 - Bài test nhẹ (quiz_15, test_60, custom), bài thi có lịch (exam), tính giờ server, chấm tay writing/speaking, bảng điểm. Upload R2 (thu âm) bắt đầu từ phase này.
 
@@ -50,14 +50,14 @@ app/(learner)/learn/[courseSlug]/assessments/[id]/{page,take,result}
 11. Test: tính deadline, từ chối trễ hạn, giới hạn lượt, finalize lười.
 
 ## Todo
-- [ ] R2 storage lib + presign API (chờ tài khoản R2)
+- [x] Storage lib + presign (S3 API)
 - [x] CRUD assessment
 - [x] Start attempt + guard
 - [x] Trang làm bài + autosave + timer
 - [x] Submit + finalize lười
 - [x] Writing player
-- [ ] Speaking player (chờ R2)
-- [x] Chấm tay (bài viết)
+- [x] Speaking player
+- [x] Chấm tay (bài viết, bài nói)
 - [x] Kết quả + bảng điểm
 - [x] Test + typecheck
 

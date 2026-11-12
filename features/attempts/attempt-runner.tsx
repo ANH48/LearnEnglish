@@ -6,13 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { type Draft, draftFromResponse, toPartialResponse } from "@/features/exercise-player/exercise-draft";
 import { ExerciseInputs } from "@/features/exercise-player/exercise-inputs";
 import type { LearnerExercise } from "@/features/exercise-player/learner-exercise";
+import { SpeakingRecorder } from "@/features/recordings/speaking-recorder";
 import { saveAttemptAnswerAction, submitAttemptAction } from "./attempt-actions";
 
 type Props = {
   attemptId: string;
   /** Time left when the server rendered the page; the server's deadline stays the judge. */
   remainingMs: number;
-  questions: { exercise: LearnerExercise; saved: unknown }[];
+  /** `recordingAnswerId`: the answer holding a voice take saved earlier, for speaking questions. */
+  questions: { exercise: LearnerExercise; saved: unknown; recordingAnswerId: string | null }[];
 };
 
 const SAVE_DELAY_MS = 800;
@@ -132,7 +134,7 @@ export function AttemptRunner({ attemptId, remainingMs, questions }: Props) {
         </p>
       </div>
 
-      {questions.map(({ exercise }, index) => (
+      {questions.map(({ exercise, recordingAnswerId }, index) => (
         <Card key={exercise.id}>
           <CardHeader>
             <CardTitle className="text-base font-medium">
@@ -142,7 +144,11 @@ export function AttemptRunner({ attemptId, remainingMs, questions }: Props) {
           </CardHeader>
           <CardContent>
             {exercise.type === "listening" && <p className="mb-2 text-sm text-muted-foreground">Audio cho bài nghe này chưa được tạo.</p>}
-            <ExerciseInputs exercise={exercise} draft={drafts[index]} onChange={(draft) => change(index, draft)} disabled={closing} />
+            {exercise.type === "speaking" ? (
+              <SpeakingRecorder attemptId={attemptId} exerciseId={exercise.id} maxSeconds={exercise.maxSeconds ?? 60} savedAnswerId={recordingAnswerId} disabled={closing} />
+            ) : (
+              <ExerciseInputs exercise={exercise} draft={drafts[index]} onChange={(draft) => change(index, draft)} disabled={closing} />
+            )}
           </CardContent>
         </Card>
       ))}
