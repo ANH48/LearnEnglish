@@ -8,9 +8,11 @@ export default async function AdminPanelLayout({ children }: { children: ReactNo
   const staff = await requireStaff();
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row">
+    <div className="flex min-h-screen flex-col bg-muted/50 md:flex-row">
       <AdminSidebar staff={staff} />
-      <main className="min-w-0 flex-1 p-4 md:p-8">{children}</main>
+      <main className="min-w-0 flex-1 px-4 py-6 md:px-10 md:py-8">
+        <div className="mx-auto w-full max-w-7xl">{children}</div>
+      </main>
     </div>
   );
 }

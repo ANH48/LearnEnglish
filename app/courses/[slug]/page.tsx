@@ -1,104 +1,129 @@
+import { Check, ClipboardCheck, Timer } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { SiteHeader, SiteMain } from "@/components/site/site-header";
-import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { cancelEnrollmentAction, requestEnrollmentAction } from "@/features/enrollments/enrollment-actions";
-import { ENROLLMENT_STATUS_LABEL } from "@/features/enrollments/enrollment-state";
+import type { ReactNode } from "react";
+import { InitialAvatar } from "@/components/brand/initial-avatar";
+import { SiteHeader } from "@/components/site/site-header";
+import { CourseCurriculum } from "@/features/course-detail/course-curriculum";
+import { loadCourseDetail } from "@/features/course-detail/course-detail-query";
+import { CourseEnrollCard } from "@/features/course-detail/course-enroll-card";
+import { CourseHero } from "@/features/course-detail/course-hero";
+import { EXERCISE_TYPE_DISPLAY, EXERCISE_TYPE_ORDER } from "@/features/course-detail/exercise-type-display";
+import { ASSESSMENT_KIND_LABELS } from "@/lib/assessments/attempt-rules";
 import { getCurrentCustomer } from "@/lib/auth/current-customer";
 import { db } from "@/lib/db";
 
-/** Public course page: description, lesson titles, and the join button for the visitor's current state. */
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const course = await db.course.findFirst({ where: { slug: (await params).slug, deletedAt: null, status: "published" }, select: { title: true } });
+  return { title: course?.title ?? "Khóa học" };
+}
+
+/** Public course page: what the course trains, its lessons (titles only), tests, teachers, and the join card. */
 export default async function CoursePage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-  const course = await db.course.findFirst({
-    where: { slug, deletedAt: null, status: "published" },
-    include: {
-      categories: { include: { category: true } },
-      lessons: { where: { deletedAt: null, status: "published" }, orderBy: [{ position: "asc" }, { createdAt: "asc" }], select: { id: true, title: true } },
-    },
-  });
+  const course = await loadCourseDetail((await params).slug);
   if (!course) notFound();
 
   const customer = await getCurrentCustomer();
   const enrollment = customer
-    ? await db.enrollment.findUnique({ where: { courseId_customerId: { courseId: course.id, customerId: customer.id } } })
+    ? await db.enrollment.findUnique({ where: { courseId_customerId: { courseId: course.id, customerId: customer.id } }, select: { status: true, note: true } })
     : null;
   const status = enrollment?.status ?? null;
+  const skills = EXERCISE_TYPE_ORDER.filter((type) => course.exerciseTypes[type]);
 
   return (
     <>
       <SiteHeader />
-      <SiteMain>
-        <div className="grid max-w-2xl gap-6">
-          <div className="grid gap-2">
-            <Link href="/#courses" className="text-sm text-muted-foreground hover:underline">
-              ← Tất cả khóa học
-            </Link>
-            <h1 className="text-3xl font-semibold text-balance">{course.title}</h1>
-            <div className="flex flex-wrap gap-1">
-              {course.categories.map((c) => (
-                <Badge key={c.categoryId} variant="secondary">
-                  {c.category.name}
-                </Badge>
-              ))}
-            </div>
-            <p className="whitespace-pre-line text-muted-foreground">{course.description}</p>
-          </div>
+      <CourseHero course={course} />
 
-          <div className="grid gap-2 rounded-xl border p-4">
-            {!customer && (
-              <>
-                <p className="text-sm">Đăng nhập để gửi yêu cầu tham gia khóa học này.</p>
-                <div className="flex flex-wrap gap-2">
-                  <Link href={`/login?next=/courses/${course.slug}`} className={buttonVariants()}>
-                    Đăng nhập
-                  </Link>
-                  <Link href={`/register?next=/courses/${course.slug}`} className={buttonVariants({ variant: "outline" })}>
-                    Tạo tài khoản
-                  </Link>
-                </div>
-              </>
-            )}
-            {customer && status && <p className="text-sm font-medium">Trạng thái: {ENROLLMENT_STATUS_LABEL[status]}</p>}
-            {customer && status === "approved" && (
-              <div>
-                <Link href={`/learn/${course.slug}`} className={buttonVariants()}>
-                  Vào học
-                </Link>
-              </div>
-            )}
-            {customer && status === "pending" && (
-              <>
-                <p className="text-sm text-muted-foreground">Teacher của khóa sẽ duyệt yêu cầu của bạn. Bạn chưa cần làm gì thêm.</p>
-                <form action={cancelEnrollmentAction.bind(null, course.id)}>
-                  <Button type="submit" variant="outline" size="sm">
-                    Hủy yêu cầu
-                  </Button>
-                </form>
-              </>
-            )}
-            {customer && status === "rejected" && enrollment?.note && (
-              <p className="text-sm text-muted-foreground">Lý do: {enrollment.note}</p>
-            )}
-            {customer && (status === null || status === "rejected" || status === "cancelled") && (
-              <form action={requestEnrollmentAction.bind(null, course.id)}>
-                <Button type="submit">{status === null ? "Đăng ký khóa học" : "Gửi lại yêu cầu"}</Button>
-              </form>
-            )}
-          </div>
-
-          <div className="grid gap-2">
-            <h2 className="text-xl font-semibold">Nội dung khóa học</h2>
-            {course.lessons.length === 0 && <p className="text-sm text-muted-foreground">Khóa học chưa có bài học nào.</p>}
-            <ol className="grid list-decimal gap-1 pl-5">
-              {course.lessons.map((lesson) => (
-                <li key={lesson.id}>{lesson.title}</li>
-              ))}
-            </ol>
-          </div>
+      <main className="mx-auto grid w-full max-w-6xl flex-1 gap-10 px-4 py-10 lg:grid-cols-[1fr_360px] lg:items-start">
+        <div className="lg:sticky lg:top-20 lg:col-start-2 lg:row-start-1 lg:-mt-[300px]">
+          <CourseEnrollCard course={course} signedIn={customer !== null} status={status} note={enrollment?.note ?? ""} />
         </div>
-      </SiteMain>
+
+        <div className="grid min-w-0 gap-10 lg:col-start-1 lg:row-start-1">
+          {skills.length > 0 && (
+            <Section title="Bạn sẽ luyện được">
+              <ul className="grid gap-3 rounded-2xl border bg-card p-5 sm:grid-cols-2">
+                {skills.map((type) => (
+                  <li key={type} className="flex gap-2.5 text-sm">
+                    <Check className="mt-0.5 size-4 shrink-0 text-primary" />
+                    {EXERCISE_TYPE_DISPLAY[type].skill}
+                  </li>
+                ))}
+              </ul>
+            </Section>
+          )}
+
+          <CourseCurriculum course={course} canLearn={status === "approved"} />
+
+          {course.assessments.length > 0 && (
+            <Section title="Bài kiểm tra và bài thi">
+              <ul className="grid gap-3 sm:grid-cols-2">
+                {course.assessments.map((a) => (
+                  <li key={a.id} className="flex items-center gap-3 rounded-2xl border bg-card p-4">
+                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent text-accent-foreground">
+                      <ClipboardCheck className="size-5" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold">{a.title}</p>
+                      <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                        {ASSESSMENT_KIND_LABELS[a.kind]} · <Timer className="size-3" /> {a.durationMinutes} phút
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </Section>
+          )}
+
+          {course.description && (
+            <Section title="Mô tả khóa học">
+              <p className="leading-relaxed whitespace-pre-line text-muted-foreground">{course.description}</p>
+            </Section>
+          )}
+
+          {course.teachers.length > 0 && (
+            <Section title="Teacher đồng hành">
+              <ul className="flex flex-wrap gap-3">
+                {course.teachers.map((t) => (
+                  <li key={t.id} className="flex items-center gap-3 rounded-2xl border bg-card py-3 pr-5 pl-3">
+                    <InitialAvatar name={t.fullName} className="size-11 text-lg" />
+                    <div>
+                      <p className="font-semibold">{t.fullName}</p>
+                      <p className="text-xs text-muted-foreground">Teacher của khóa</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </Section>
+          )}
+
+          {course.categories.length > 0 && (
+            <Section title="Chủ đề liên quan">
+              <div className="flex flex-wrap gap-2">
+                {course.categories.map((c) => (
+                  <Link
+                    key={c.slug}
+                    href={`/?category=${c.slug}#courses`}
+                    className="rounded-full border bg-card px-4 py-1.5 text-sm font-semibold transition-colors hover:border-primary/50 hover:text-primary"
+                  >
+                    {c.name}
+                  </Link>
+                ))}
+              </div>
+            </Section>
+          )}
+        </div>
+      </main>
     </>
+  );
+}
+
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="grid gap-3">
+      <h2 className="font-heading text-2xl font-extrabold tracking-tight">{title}</h2>
+      {children}
+    </section>
   );
 }
