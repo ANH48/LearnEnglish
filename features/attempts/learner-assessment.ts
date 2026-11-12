@@ -1,9 +1,17 @@
 import "server-only";
+import type { Prisma } from "@prisma/client";
 import { notFound } from "next/navigation";
 import { requireApprovedCourse } from "@/lib/auth/current-customer";
 import { db } from "@/lib/db";
 import { requireUuid } from "@/lib/forms/require-uuid";
 import { finalizeExpiredAttempts } from "./finalize-attempt";
+
+/** Limits a query to assessments this learner may take: published, in a published course they are approved for. */
+export const takeableBy = (customerId: string): Prisma.AssessmentWhereInput => ({
+  deletedAt: null,
+  status: "published",
+  course: { deletedAt: null, status: "published", enrollments: { some: { customerId, status: "approved" } } },
+});
 
 /**
  * The gate for every learner page about one assessment: approved course,

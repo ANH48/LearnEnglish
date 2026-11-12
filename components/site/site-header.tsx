@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrandLogo } from "@/components/brand/brand-logo";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { logoutCustomerAction } from "@/features/auth/logout-actions";
 import { getCurrentCustomer } from "@/lib/auth/current-customer";
@@ -10,11 +11,9 @@ export async function SiteHeader() {
   const staffSession = customer ? null : await readSession("staff");
 
   return (
-    <header className="border-b">
-      <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-        <Link href="/" className="text-lg font-semibold">
-          LearnEnglish
-        </Link>
+    <header className="sticky top-0 z-30 border-b border-border/70 bg-background/85 backdrop-blur-md">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+        <BrandLogo />
         <nav className="flex flex-wrap items-center gap-2 text-sm">
           {customer ? (
             <>
@@ -49,5 +48,5 @@ export async function SiteHeader() {
 }
 
 export function SiteMain({ children }: { children: React.ReactNode }) {
-  return <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">{children}</main>;
+  return <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>;
 }

@@ -1,17 +1,23 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
 import { type ReactNode, startTransition, useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { type ActionState, EMPTY_ACTION_STATE } from "@/lib/forms/action-state";
+import { cn } from "@/lib/utils";
 
 type Props = {
   action: (state: ActionState, formData: FormData) => Promise<ActionState>;
   submitLabel?: string;
+  /** Button text while the action runs. */
+  pendingLabel?: string;
+  /** Stretches the submit button, as on the sign-in screens. */
+  wideSubmit?: boolean;
   children: ReactNode;
 };
 
 /** Form wired to a server action, showing its validation errors above the fields. */
-export function ActionForm({ action, submitLabel = "Lưu", children }: Props) {
+export function ActionForm({ action, submitLabel = "Lưu", pendingLabel = "Đang lưu…", wideSubmit = false, children }: Props) {
   const [state, formAction, pending] = useActionState(action, EMPTY_ACTION_STATE);
   const fieldErrors = Object.entries(state.fieldErrors ?? {});
 
@@ -27,7 +33,7 @@ export function ActionForm({ action, submitLabel = "Lưu", children }: Props) {
       }}
     >
       {state.error && (
-        <div role="alert" className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm">
+        <div role="alert" className="animate-in fade-in slide-in-from-top-1 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm">
           <p className="font-medium">{state.error}</p>
           {fieldErrors.length > 0 && (
             <ul className="mt-1 list-disc pl-5">
@@ -42,8 +48,9 @@ export function ActionForm({ action, submitLabel = "Lưu", children }: Props) {
       )}
       {children}
       <div>
-        <Button type="submit" disabled={pending}>
-          {pending ? "Đang lưu…" : submitLabel}
+        <Button type="submit" disabled={pending} aria-busy={pending} className={cn(wideSubmit && "h-11 w-full text-base")}>
+          {pending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+          {pending ? pendingLabel : submitLabel}
         </Button>
       </div>
     </form>

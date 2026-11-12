@@ -4,14 +4,19 @@ import type { CurrentStaff } from "@/lib/auth/current-staff";
 import { courseScopeWhere } from "@/lib/permissions/course-scope";
 
 /**
- * Answers a teacher grades by hand, limited to the actor's courses: written
- * answers from lessons, and from attempts once they are handed in.
+ * Answers a teacher grades by hand, limited to the actor's courses: written and
+ * spoken answers from lessons and from attempts once they are handed in, plus
+ * lesson practice of fill-in exercises marked "teacher grades".
  */
 export function manualAnswerWhere(staff: CurrentStaff): Prisma.AnswerWhereInput {
   return {
-    exercise: { type: { in: ["writing", "speaking"] }, course: courseScopeWhere(staff) },
+    exercise: { course: courseScopeWhere(staff) },
     customer: { deletedAt: null },
-    OR: [{ attemptId: null }, { attempt: { status: { not: "in_progress" } } }],
+    OR: [
+      { exercise: { type: { in: ["writing", "speaking"] } }, OR: [{ attemptId: null }, { attempt: { status: { not: "in_progress" } } }] },
+      // autoScore null: answers graded automatically before the exercise was marked stay out of the queue.
+      { attemptId: null, autoScore: null, exercise: { type: "fill_blank", data: { path: ["teacherGraded"], equals: true } } },
+    ],
   };
 }
 

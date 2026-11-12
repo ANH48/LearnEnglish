@@ -4,12 +4,14 @@ import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { requireCustomer } from "@/lib/auth/current-customer";
 import { db } from "@/lib/db";
-import { gradeExercise, parseResponse, parseWritingResponse, scoreFor } from "@/lib/grading/grade-exercise";
+import { BLANK } from "@/features/exercises/exercise-content";
+import { gradeExercise, isTeacherGradedFillBlank, parseResponse, parseWritingResponse, scoreFor } from "@/lib/grading/grade-exercise";
 import { solutionText } from "./learner-exercise";
+import { saveLatestPracticeAnswer } from "./practice-answer";
 
 export type SubmitResult =
   | { ok: true; waiting: false; score: number; points: number; parts: boolean[]; solution: string }
-  /** Writing: stored and queued for the teacher. */
+  /** Writing, or a fill-in exercise the teacher grades: stored and queued for the teacher. */
   | { ok: true; waiting: true }
   | { ok: false; error: string };
 
@@ -46,39 +48,25 @@ export async function submitExerciseAnswerAction(exerciseId: string, response: u
     const written = parseWritingResponse(response);
     if (!written || !written.text.trim()) return invalid;
     // Sending again replaces the text and puts it back in the teacher's queue.
-    await saveLatestPracticeAnswer(customer.id, exerciseId, written, null);
+    await saveLatestPracticeAnswer(customer.id, exerciseId, { response: written, autoScore: null });
     return { ok: true, waiting: true };
   }
 
   // Only the validated shape is graded and stored, never the raw request body.
   const cleaned = parseResponse(exercise.type, response);
+  if (isTeacherGradedFillBlank(exercise.type, exercise.data)) {
+    const answers = (cleaned as { answers: string[] } | null)?.answers;
+    const blanks = String((exercise.data as { text?: unknown }).text ?? "").split(BLANK).length - 1;
+    if (!answers || answers.length !== blanks || answers.some((answer) => !answer.trim())) return invalid;
+    // Stored ungraded; sending again puts it back in the teacher's queue.
+    await saveLatestPracticeAnswer(customer.id, exerciseId, { response: { answers }, autoScore: null });
+    return { ok: true, waiting: true };
+  }
   const graded = cleaned && gradeExercise(exercise.type, exercise.answerKey, cleaned);
   if (!cleaned || !graded) return invalid;
   const score = scoreFor(graded.ratio, exercise.points);
 
-  await saveLatestPracticeAnswer(customer.id, exerciseId, cleaned as Prisma.InputJsonObject, score);
+  await saveLatestPracticeAnswer(customer.id, exerciseId, { response: cleaned as Prisma.InputJsonObject, autoScore: score });
   return { ok: true, waiting: false, score, points: exercise.points, parts: graded.parts, solution: solutionText(exercise) };
 }
 
-/**
- * Practice answers have no attempt; one row per learner and exercise holds the
- * latest. The advisory lock makes two submits at once take turns, so they
- * cannot both insert a row.
- */
-async function saveLatestPracticeAnswer(customerId: string, exerciseId: string, response: Prisma.InputJsonObject, autoScore: number | null) {
-  // Any earlier teacher grade belonged to the previous text, so it is cleared.
-  const data = { response, autoScore, manualScore: null, feedback: "", gradedBy: null, gradedAt: null };
-  await db.$transaction(async (tx) => {
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`${customerId}:${exerciseId}`}))`;
-    const previous = await tx.answer.findFirst({
-      where: { customerId, exerciseId, attemptId: null },
-      orderBy: { updatedAt: "desc" },
-      select: { id: true },
-    });
-    if (previous) {
-      await tx.answer.update({ where: { id: previous.id }, data });
-    } else {
-      await tx.answer.create({ data: { ...data, customerId, exerciseId } });
-    }
-  });
-}

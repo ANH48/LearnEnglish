@@ -12,7 +12,7 @@ Brainstorm: [../reports/brainstorm-261111-learn-english-platform-mvp-scope-and-t
 
 ## Stack
 
-Next.js App Router + TS · shadcn/ui + Tailwind · PostgreSQL (Supabase, chỉ dùng DB; pooler URL cho app, direct URL cho migrate) + Prisma · MongoDB (Atlas) cho prompt version + history · Zod · JWT cookie httpOnly (2 cookie, 2 secret, `token_version`) + argon2 · Cloudflare R2 presigned upload · Vercel · bridge theo mô hình DemoPage `classroom/bridge` (3 script poll + phiên Claude Code + skill `analyst-pdf-to-homeworks`) · TTS local en-GB.
+Next.js App Router + TS · shadcn/ui + Tailwind · PostgreSQL (Supabase, chỉ dùng DB; pooler URL cho app, direct URL cho migrate) + Prisma · MongoDB (Atlas) cho prompt version + history · Zod · JWT cookie httpOnly (2 cookie, 2 secret, `token_version`) + argon2 · S3 API presigned upload (MinIO local, Supabase Storage khi deploy, S3/R2 sau) · Vercel · bridge theo mô hình DemoPage `classroom/bridge` (3 script poll + phiên Claude Code + skill `analyst-pdf-to-homeworks`) · TTS local en-GB.
 
 ## Phases
 
@@ -20,15 +20,17 @@ Next.js App Router + TS · shadcn/ui + Tailwind · PostgreSQL (Supabase, chỉ d
 |---|---|---|---|
 | 1 | Nền: setup, auth 2 phía, group quyền, CRUD nội dung, khung admin | complete | [phase-01](phase-01-foundation-auth-permissions-content-crud.md) |
 | 2 | Học viên: landing, đăng ký, xin vào khóa, duyệt, học, chấm tự động | complete | [phase-02](phase-02-learner-enrollment-lessons-auto-grading.md) |
-| 3 | Kiểm tra + thi: tính giờ, lịch thi, chấm tay, bảng điểm | complete trừ bài nói + R2 | [phase-03](phase-03-assessments-exams-manual-grading.md) |
+| 3 | Kiểm tra + thi: tính giờ, lịch thi, chấm tay, bảng điểm | complete (lưu file: MinIO local, Supabase Storage khi deploy) | [phase-03](phase-03-assessments-exams-manual-grading.md) |
 | 4 | AI: bridge worker, PDF → bản nháp | pending | [phase-04](phase-04-ai-bridge-pdf-to-draft.md) |
 | 5 | Voice UK 3 tốc độ | pending | [phase-05](phase-05-uk-voice-tts-three-speeds.md) |
 
 Thứ tự tuần tự 1 → 5. Ngoại lệ: spike nghe thử TTS (phase 5, bước 1) làm song song bất kỳ lúc nào.
 
+Ngoài kế hoạch (12/11/2026): bài học theo khối cho khóa "1000 câu 50 ngày" — Ngày 1 đã nhập, giọng Mỹ Kokoro sinh trên máy, điền từ do teacher chấm. Xem `docs/system-architecture.md` mục Nội dung. Phase 5 vẫn ghi giọng UK; user yêu cầu giọng US cho khóa này.
+
 ## Dependencies ngoài
 
-- Tài khoản Supabase, Vercel, Cloudflare R2, MongoDB Atlas (user tạo, cấp env). Supabase free tạm dừng project khi lâu không truy cập — cần xác minh lại.
+- Tài khoản Supabase (DB + Storage), Vercel, MongoDB Atlas (user tạo, cấp env). Supabase free tạm dừng project khi lâu không truy cập — cần xác minh lại.
 - AI local + TTS local chạy được trên máy user (phase 4, 5).
 
 ## Quy ước chung

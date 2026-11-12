@@ -61,7 +61,11 @@ export default async function AttemptResultPage({ params }: Props) {
                 Câu {index + 1}. {link.exercise.prompt}
               </p>
               <p className="tabular-nums">{waiting ? "Chờ teacher chấm" : `${score}/${link.points} điểm`}</p>
-              <p className="whitespace-pre-wrap text-muted-foreground">Bạn trả lời: {given || "(bỏ trống)"}</p>
+              {answer?.mediaId ? (
+                <audio controls src={`/api/recordings/${answer.id}`} className="w-full" aria-label="Bản thu của bạn" />
+              ) : (
+                <p className="whitespace-pre-wrap text-muted-foreground">Bạn trả lời: {given || "(bỏ trống)"}</p>
+              )}
               {showSolutions && !manual && <p className="text-muted-foreground">Đáp án: {solutionText(link.exercise)}</p>}
               {answer?.feedback && <p>Nhận xét của teacher: {answer.feedback}</p>}
             </li>

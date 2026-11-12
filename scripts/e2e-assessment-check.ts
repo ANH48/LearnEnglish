@@ -34,6 +34,7 @@ async function main() {
   // Start clean so the script can run again and again.
   await db.assessment.deleteMany({ where: { title: { startsWith: "e2e-asm-" } } });
   await db.exercise.deleteMany({ where: { prompt: { startsWith: "e2e-asm-" } } });
+  await db.mediaFile.deleteMany({ where: { storageKey: { startsWith: "recordings/e2e-asm-" } } });
 
   const mkExercise = (courseId: string, prompt: string, type: "multiple_choice" | "writing") =>
     db.exercise.create({
@@ -183,6 +184,24 @@ async function main() {
   check("assessment of course B under course A's URL is 404", r.status === 404, String(r.status));
   r = await visit("/admin/grading", cookie);
   check("learner session cannot open the grading queue", r.status !== 200, String(r.status));
+
+  // Voice recordings: only the learner who recorded and teachers of that course may listen
+  const speakingB = await db.exercise.create({ data: { courseId: courseB.id, type: "speaking", prompt: "e2e-asm-speaking-b", status: "published", data: { maxSeconds: 30 } } });
+  const media = await db.mediaFile.create({ data: { kind: "recording", storageKey: `recordings/e2e-asm-${Date.now()}.webm`, mime: "audio/webm", sizeBytes: 1 } });
+  const spoken = await db.answer.create({ data: { exerciseId: speakingB.id, customerId: learner.id, mediaId: media.id } });
+  const listen = `/api/recordings/${spoken.id}`;
+  r = await visit(listen, cookie);
+  check("the learner who recorded gets a storage link", r.status === 302 && r.location.includes("X-Amz-Signature"), `${r.status}`);
+  r = await visit(listen, strangerCookie);
+  check("another learner cannot listen", r.status === 404, String(r.status));
+  r = await visit(listen, teacherCookie);
+  check("teacher A cannot listen to a recording of course B", r.status === 404, String(r.status));
+  r = await visit(listen, adminCookie);
+  check("superadmin can listen (scope check not vacuous)", r.status === 302, String(r.status));
+  r = await visit(listen);
+  check("signed-out visitor cannot listen", r.status === 404, String(r.status));
+  r = await visit(`/api/recordings/${answerB.id}`, cookie);
+  check("an answer without a recording is 404", r.status === 404, String(r.status));
 
   await db.attempt.delete({ where: { id: attemptB.id } });
   console.log(failures === 0 ? "\nALL PASSED" : `\n${failures} FAILED`);

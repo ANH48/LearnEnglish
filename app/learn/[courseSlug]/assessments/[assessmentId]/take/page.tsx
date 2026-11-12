@@ -13,12 +13,12 @@ export default async function TakeAssessmentPage({ params }: Props) {
 
   const attempt = await db.attempt.findFirst({
     where: { assessmentId, customerId: customer.id, status: "in_progress" },
-    include: { answers: { select: { exerciseId: true, response: true } } },
+    include: { answers: { select: { id: true, exerciseId: true, response: true, mediaId: true } } },
   });
   if (!attempt) redirect(`/learn/${course.slug}/assessments/${assessment.id}`);
 
   const questions = await loadAssessmentQuestions(assessmentId);
-  const saved = new Map(attempt.answers.map((a) => [a.exerciseId, a.response]));
+  const saved = new Map(attempt.answers.map((a) => [a.exerciseId, a]));
 
   return (
     <div className="grid max-w-2xl gap-4">
@@ -29,7 +29,8 @@ export default async function TakeAssessmentPage({ params }: Props) {
         questions={questions.map((link) => ({
           // Points come from the assessment, which may weigh a question differently from its lesson.
           exercise: toLearnerExercise({ ...link.exercise, points: link.points }),
-          saved: saved.get(link.exerciseId) ?? null,
+          saved: saved.get(link.exerciseId)?.response ?? null,
+          recordingAnswerId: saved.get(link.exerciseId)?.mediaId ? saved.get(link.exerciseId)!.id : null,
         }))}
       />
     </div>

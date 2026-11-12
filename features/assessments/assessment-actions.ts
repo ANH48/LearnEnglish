@@ -56,11 +56,8 @@ export async function saveAssessmentQuestionsAction(
   if (!assessment) return { error: "Không tìm thấy bài kiểm tra." };
 
   // Every picked exercise must belong to this same course, whatever the form says.
-  // Speaking cannot be answered yet, so it is refused here as well as hidden in the picker.
-  const owned = await db.exercise.count({
-    where: { id: { in: picked.map((p) => p.exerciseId) }, courseId, deletedAt: null, type: { not: "speaking" } },
-  });
-  if (owned !== picked.length) return { error: "Có bài tập không dùng được cho bài kiểm tra này." };
+  const owned = await db.exercise.count({ where: { id: { in: picked.map((p) => p.exerciseId) }, courseId, deletedAt: null } });
+  if (owned !== picked.length) return { error: "Có bài tập không thuộc khóa học này." };
 
   const locked = await db.$transaction(async (tx) => {
     // Takes turns with a learner pressing "start", so the list cannot change under a new attempt.

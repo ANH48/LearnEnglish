@@ -1,0 +1,9 @@
+{
+  "name": "learn-english-tts",
+  "private": true,
+  "type": "module",
+  "description": "Local text-to-speech for lesson audio (Kokoro, American English). Kept out of the web app's dependencies.",
+  "dependencies": {
+    "kokoro-js": "^1.2.1"
+  }
+}

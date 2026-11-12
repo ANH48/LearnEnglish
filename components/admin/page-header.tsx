@@ -1,5 +1,7 @@
+import { ChevronLeft, Plus } from "lucide-react";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export function PageHeader({
   title,
@@ -13,21 +15,28 @@ export function PageHeader({
   back?: { href: string; label: string };
 }) {
   return (
-    <div className="mb-6 grid gap-2">
+    <div className="mb-8 grid gap-2">
       {back && (
-        <Link href={back.href} className="text-sm text-muted-foreground hover:underline">
-          ← {back.label}
+        <Link
+          href={back.href}
+          className="inline-flex w-fit items-center gap-1 rounded-md text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+        >
+          <ChevronLeft className="size-4" />
+          {back.label}
         </Link>
       )}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">{title}</h1>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="grid gap-1">
+          <h1 className="font-heading text-3xl font-extrabold tracking-tight text-balance">{title}</h1>
+          {description && <p className="max-w-2xl text-sm text-muted-foreground">{description}</p>}
+        </div>
         {action && (
-          <Link href={action.href} className={buttonVariants()}>
+          <Link href={action.href} className={cn(buttonVariants({ size: "lg" }), "h-10 rounded-xl px-4 shadow-md shadow-primary/20")}>
+            <Plus className="size-4" />
             {action.label}
           </Link>
         )}
       </div>
-      {description && <p className="text-sm text-muted-foreground">{description}</p>}
     </div>
   );
 }

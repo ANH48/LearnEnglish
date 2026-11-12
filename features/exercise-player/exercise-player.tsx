@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { type Draft, draftFromResponse, emptyDraft, toResponse } from "./exercise-draft";
+import { SpeakingRecorder } from "@/features/recordings/speaking-recorder";
 import { ExerciseInputs } from "./exercise-inputs";
 import type { LearnerExercise } from "./learner-exercise";
 import { type SubmitResult, submitExerciseAnswerAction } from "./submit-answer-action";
@@ -14,8 +15,8 @@ type Props = {
   index: number;
   /** Score of the learner's last submission, if any. */
   lastScore: number | null;
-  /** Writing only: the text sent earlier and the teacher's grade, once given. */
-  written?: { response: unknown; score: number | null; feedback: string };
+  /** Writing and speaking: what was sent earlier and the teacher's grade, once given. */
+  written?: { response: unknown; score: number | null; feedback: string; recordingAnswerId: string | null };
 };
 
 /** One practice exercise: answer, submit, see the score and the right answer, try again. */
@@ -49,7 +50,18 @@ export function ExercisePlayer({ exercise, index, lastScore, written }: Props) {
         {exercise.type === "listening" && (
           <p className="text-sm text-muted-foreground">Audio cho bài nghe này chưa được tạo.</p>
         )}
-        <ExerciseInputs exercise={exercise} draft={draft} onChange={setDraft} disabled={pending || done} />
+        {exercise.type === "speaking" ? (
+          <SpeakingRecorder
+            attemptId={null}
+            exerciseId={exercise.id}
+            maxSeconds={exercise.maxSeconds ?? 60}
+            savedAnswerId={written?.recordingAnswerId ?? null}
+            disabled={false}
+            onSaved={() => router.refresh()}
+          />
+        ) : (
+          <ExerciseInputs exercise={exercise} draft={draft} onChange={setDraft} disabled={pending || done} />
+        )}
 
         {result?.ok === false && (
           <p role="alert" className="text-sm text-destructive">
@@ -80,7 +92,10 @@ export function ExercisePlayer({ exercise, index, lastScore, written }: Props) {
           </div>
         )}
 
-        {(exercise.autoGraded || exercise.type === "writing") && (
+        {exercise.type === "fill_blank" && !exercise.autoGraded && !written && !result && (
+          <p className="text-xs text-muted-foreground">Teacher sẽ chấm bài này sau khi bạn nộp.</p>
+        )}
+        {exercise.type !== "speaking" && (
           <div className="flex gap-2">
             {!done ? (
               <Button
