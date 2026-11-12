@@ -2,7 +2,7 @@
 // the page shows every section without leaking answers, audio is served only to people who may hear it,
 // and a fill-in exercise marked "teacher grades" lands in the grading queue ungraded.
 // Import the lesson first (scripts/import-day-lesson.ts).
-// Run from the repo root: npx tsx --env-file=.env scripts/e2e-day-lesson-check.ts
+// Run from the repo root: npx tsx --env-file=.env scripts/e2e-day-lesson-check.ts  (other day: E2E_DAY_TITLE="Ngày 2")
 import { randomUUID } from "node:crypto";
 import { PrismaClient } from "@prisma/client";
 import { blockAudioIds, parseLessonBlocks } from "../features/lesson-blocks/lesson-blocks";
@@ -47,7 +47,7 @@ async function learnerCookie(email: string, password: string, courseId: string |
 async function main() {
   const course = await db.course.findUniqueOrThrow({ where: { slug: COURSE_SLUG } });
   const lesson = await db.lesson.findFirstOrThrow({
-    where: { courseId: course.id, deletedAt: null, title: { startsWith: "Ngày 1" } },
+    where: { courseId: course.id, deletedAt: null, title: { startsWith: process.env.E2E_DAY_TITLE ?? "Ngày 1" } },
     include: { exercises: { where: { deletedAt: null } } },
   });
   const blocks = parseLessonBlocks(lesson.blocks);
