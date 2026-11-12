@@ -45,7 +45,7 @@ export function ExerciseInputs({ exercise, draft, onChange, disabled }: Props) {
   if (exercise.type === "fill_blank") {
     const pieces = (exercise.text ?? "").split(BLANK);
     return (
-      <p className="leading-10">
+      <p className="leading-10 whitespace-pre-line">
         {pieces.map((piece, index) => (
           <span key={index}>
             {piece}

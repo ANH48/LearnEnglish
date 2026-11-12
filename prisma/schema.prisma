@@ -217,6 +217,7 @@ model Lesson {
   courseId    String        @map("course_id") @db.Uuid
   title       String
   content     String        @default("")
+  blocks      Json          @default("[]") // ordered sections (sentences, notes, story...), see features/lesson-blocks
   position    Int           @default(0)
   status      ContentStatus @default(draft)
   sourcePdfId String?       @map("source_pdf_id") @db.Uuid

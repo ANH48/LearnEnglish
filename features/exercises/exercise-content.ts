@@ -32,7 +32,12 @@ const choiceShape = {
 const editorSchemas = {
   multiple_choice: z.object(choiceShape),
   listening: z.object({ transcript: text.max(2000), ...choiceShape }),
-  fill_blank: z.object({ text, answers: z.array(z.array(text.max(200, "Đáp án tối đa 200 ký tự")).min(1).max(10)).min(1).max(30) }),
+  fill_blank: z.object({
+    text,
+    answers: z.array(z.array(text.max(200, "Đáp án tối đa 200 ký tự")).min(1).max(10)).min(1).max(30),
+    /** Lesson practice is queued for the teacher instead of being graded at once. */
+    teacherGraded: z.boolean().optional(),
+  }),
   matching: z.object({ pairs: z.array(z.object({ left: text, right: text })).min(2, "Cần ít nhất 2 cặp").max(12) }),
   ordering: z.object({ sentence: text }),
   writing: z.object({ minWords: z.number().int().min(0).max(2000) }),
@@ -70,13 +75,13 @@ export function buildExerciseContent(type: ExerciseTypeName, payload: unknown): 
       return { ok: true, data: { options }, answerKey: key };
     }
     case "fill_blank": {
-      const { text: rawBody, answers } = p as EditorPayload["fill_blank"];
+      const { text: rawBody, answers, teacherGraded } = p as EditorPayload["fill_blank"];
       // Any run of 3 or more underscores is one blank, stored in the canonical form.
       const body = rawBody.replace(/_{3,}/g, BLANK);
       const blanks = body.split(BLANK).length - 1;
       if (blanks === 0) return fail(`Câu cần có ít nhất một chỗ trống, viết bằng ${BLANK}.`);
       if (blanks !== answers.length) return fail(`Có ${blanks} chỗ trống nhưng ${answers.length} dòng đáp án.`);
-      return { ok: true, data: { text: body }, answerKey: { answers } };
+      return { ok: true, data: { text: body, ...(teacherGraded ? { teacherGraded: true } : {}) }, answerKey: { answers } };
     }
     case "matching": {
       const { pairs } = p as EditorPayload["matching"];
@@ -121,7 +126,7 @@ export function toEditorPayload(type: ExerciseTypeName, data: unknown, answerKey
     const candidates: { [K in ExerciseTypeName]: () => unknown } = {
       multiple_choice: () => ({ options: d.options, correct: k.correct }),
       listening: () => ({ transcript: k.transcript, options: d.options, correct: k.correct }),
-      fill_blank: () => ({ text: d.text, answers: k.answers }),
+      fill_blank: () => ({ text: d.text, answers: k.answers, ...(d.teacherGraded === true ? { teacherGraded: true } : {}) }),
       matching: () => ({
         pairs: (d.left as string[]).map((left, i) => ({ left, right: (d.right as string[])[(k.matches as number[])[i]] })),
       }),

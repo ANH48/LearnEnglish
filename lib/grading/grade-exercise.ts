@@ -36,7 +36,15 @@ export function needsManualGrading(type: string): boolean {
   return type === "writing" || type === "speaking";
 }
 
-const writingSchema = z.object({ text: z.string().max(10_000).refine((value) => !value.includes("\u0000")) });
+/**
+ * A fill-in exercise the teacher chose to grade by hand. Applies to practice in a
+ * lesson only: inside an assessment the same exercise is still graded automatically.
+ */
+export function isTeacherGradedFillBlank(type: string, data: unknown): boolean {
+  return type === "fill_blank" && (data as { teacherGraded?: unknown } | null)?.teacherGraded === true;
+}
+
+const writingSchema =z.object({ text: z.string().max(10_000).refine((value) => !value.includes("\u0000")) });
 
 /** A written answer with unknown fields removed, or null when it is not one. */
 export function parseWritingResponse(response: unknown): { text: string } | null {
@@ -49,7 +57,8 @@ export type Graded = { ratio: number; parts: boolean[] };
 
 /** Case, surrounding/repeated spaces and curly apostrophes do not count as mistakes. */
 export function normalizeAnswer(text: string): string {
-  return text.trim().replace(/\s+/g, " ").replace(/[’‘`]/g, "'").toLowerCase();
+  // NFC: Vietnamese typed with combining marks must equal the precomposed form.
+  return text.normalize("NFC").trim().replace(/\s+/g, " ").replace(/[’‘`]/g, "'").toLowerCase();
 }
 
 const whole = (correct: boolean): Graded => ({ ratio: correct ? 1 : 0, parts: [correct] });

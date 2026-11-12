@@ -83,6 +83,14 @@ export function ExerciseContentEditor({ initialType, initialPayload }: Props) {
               }
             />
           </FormField>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={(payload as EditorPayload["fill_blank"]).teacherGraded === true}
+              onChange={(e) => patch({ teacherGraded: e.target.checked })}
+            />
+            Teacher chấm tay khi học viên làm trong bài học (không chấm tự động)
+          </label>
         </>
       )}
 

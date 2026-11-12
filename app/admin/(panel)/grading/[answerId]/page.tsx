@@ -4,7 +4,7 @@ import { FormField } from "@/components/admin/form-field";
 import { PageHeader } from "@/components/admin/page-header";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { responseText } from "@/features/exercise-player/learner-exercise";
+import { responseText, solutionText } from "@/features/exercise-player/learner-exercise";
 import { gradeAnswerAction } from "@/features/manual-grading/grade-answer-action";
 import { gradingAnswerInclude, manualAnswerWhere, maxPointsFor } from "@/features/manual-grading/grading-queue";
 import { requirePermission } from "@/lib/auth/current-staff";
@@ -23,6 +23,7 @@ export default async function GradeAnswerPage({ params }: { params: Promise<{ an
   const text = responseText(answer.exercise, answer.response);
   const minWords = (answer.exercise.data as { minWords?: number } | null)?.minWords ?? 0;
   const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+  const fillBlank = answer.exercise.type === "fill_blank";
 
   return (
     <>
@@ -35,6 +36,7 @@ export default async function GradeAnswerPage({ params }: { params: Promise<{ an
         <section className="grid gap-1">
           <h2 className="font-semibold">Đề bài</h2>
           <p className="whitespace-pre-wrap text-sm">{answer.exercise.prompt}</p>
+          {fillBlank && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{(answer.exercise.data as { text?: string } | null)?.text}</p>}
         </section>
         <section className="grid gap-1">
           <h2 className="font-semibold">Bài làm</h2>
@@ -43,9 +45,13 @@ export default async function GradeAnswerPage({ params }: { params: Promise<{ an
           ) : (
             <>
               <p className="rounded-xl border p-3 text-sm leading-6 whitespace-pre-wrap">{text || "(không có nội dung)"}</p>
-              <p className="text-xs text-muted-foreground tabular-nums">
-                {words} từ{minWords > 0 && ` · yêu cầu tối thiểu ${minWords} từ`}
-              </p>
+              {fillBlank ? (
+                <p className="text-sm text-muted-foreground">Đáp án: {solutionText(answer.exercise)}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground tabular-nums">
+                  {words} từ{minWords > 0 && ` · yêu cầu tối thiểu ${minWords} từ`}
+                </p>
+              )}
             </>
           )}
         </section>

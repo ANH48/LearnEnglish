@@ -43,3 +43,6 @@ next-env.d.ts
 # credentials dropped in the repo root
 *.env
 !.env.example
+
+# local text-to-speech tooling
+/bridge/tts/node_modules

@@ -26,6 +26,8 @@ Next.js App Router + TS · shadcn/ui + Tailwind · PostgreSQL (Supabase, chỉ d
 
 Thứ tự tuần tự 1 → 5. Ngoại lệ: spike nghe thử TTS (phase 5, bước 1) làm song song bất kỳ lúc nào.
 
+Ngoài kế hoạch (12/11/2026): bài học theo khối cho khóa "1000 câu 50 ngày" — Ngày 1 đã nhập, giọng Mỹ Kokoro sinh trên máy, điền từ do teacher chấm. Xem `docs/system-architecture.md` mục Nội dung. Phase 5 vẫn ghi giọng UK; user yêu cầu giọng US cho khóa này.
+
 ## Dependencies ngoài
 
 - Tài khoản Supabase (DB + Storage), Vercel, MongoDB Atlas (user tạo, cấp env). Supabase free tạm dừng project khi lâu không truy cập — cần xác minh lại.

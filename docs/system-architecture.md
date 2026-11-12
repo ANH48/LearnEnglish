@@ -8,7 +8,7 @@ Trạng thái: giai đoạn 1, 2, 3 xong. Phần chưa làm ghi rõ "(giai đo�
 |---|---|
 | Next.js trên Vercel | Giao diện + server actions. Mọi trang admin render theo request. |
 | PostgreSQL (Supabase) | Dữ liệu chính, qua Prisma. `DATABASE_URL` = pooler, `DIRECT_URL` = kết nối trực tiếp cho migration. |
-| Lưu file qua S3 API | Bài thu âm; PDF và audio ở giai đoạn sau. MinIO trên máy, Supabase Storage (S3 protocol) khi deploy, sau này AWS S3 hoặc Cloudflare R2 khi data lớn; chỉ khác các biến `S3_*` |
+| Lưu file qua S3 API | Bài thu âm; PDF và audio ở giai đoạn sau. Supabase Storage (S3 protocol) cho cả máy dev lẫn deploy, sau này AWS S3 hoặc Cloudflare R2 khi data lớn; chỉ khác các biến `S3_*` |
 | MongoDB Atlas | Prompt, version, history (giai đoạn 4) |
 | Bridge trên máy user | Script theo dõi job + phiên Claude Code (giai đoạn 4) |
 
@@ -34,6 +34,10 @@ Thể loại ↔ Khóa học (nhiều–nhiều) → Bài học → Bài tập. 
 
 Bài tập lưu hai cột JSON: `data` (học viên được thấy) và `answer_key` (không gửi cho học viên trước khi nộp). Chuyển đổi giữa form soạn và hai cột này nằm ở `features/exercises/exercise-content.ts`.
 
+Bài học có hai phần nội dung, dùng riêng hoặc cùng lúc: `content` (markdown) và `blocks` (JSON, danh sách khối theo thứ tự). Sáu loại khối, định nghĩa ở `features/lesson-blocks/lesson-blocks.ts`: `sentences` (danh sách câu + một file audio + mốc giây từng câu), `notes` (cấu trúc cần nhớ), `exercise` (đặt một bài tập của bài học vào giữa các khối), `story` (truyện, audio chậm / thường / nhanh, lời truyện ẩn tới khi bấm xem), `vocabulary` (từ + nghĩa, bấm kiểm tra thì hiện bài tập gõ nghĩa), `translation`. Chữ in đậm trong câu tiếng Anh viết bằng `**...**`. Cột `blocks` hỏng định dạng thì coi như không có khối, không lỗi trang.
+
+Hiện chưa có form soạn khối trong admin: bài theo ngày được nhập bằng `scripts/import-day-lesson.ts` từ một file JSON (chữ + bài tập vào database, mp3 vào bucket); chạy lại thì cập nhật tại chỗ. File JSON và mp3 chỉ là đầu vào tạm, không lưu trong repo. Form bài học trong admin không đụng tới `blocks`.
+
 Tài khoản và nội dung dùng xóa mềm (`deleted_at`); email và slug của bản đã xóa được đổi tên để dùng lại được.
 
 ## Khu học viên
@@ -48,7 +52,10 @@ Tài khoản và nội dung dùng xóa mềm (`deleted_at`); email và slug củ
 - Tiến độ: `lesson_progress`, học viên tự đánh dấu học xong. Bài học không khóa tuần tự.
 - Bài viết trong bài học: học viên nộp chữ, lưu vào `answers` chưa có điểm và vào hàng chờ chấm; nộp lại thì xóa điểm cũ.
 - Bài nói trong bài học: thu âm xong là nộp, vào hàng chờ chấm; thu lại thì thay bản cũ.
-- Chưa có: audio bài nghe (giai đoạn 5).
+- Bài điền từ có `data.teacherGraded = true` (ô chọn trong form bài tập): làm trong bài học thì lưu chưa có điểm và vào hàng chờ chấm như bài viết; trong bài kiểm tra vẫn chấm tự động.
+- Audio của bài học (`/api/lesson-audio/[lessonId]/[mediaId]`): chỉ phát file mà `blocks` của bài đó nhắc tới, cho học viên đã được duyệt vào khóa đã xuất bản hoặc staff vào được khóa; còn lại 404. File nằm ở `lesson-audio/<lesson id>/` trong bucket, có dòng `media_files` loại `audio`.
+- Giọng đọc: `bridge/tts/generate-day-lesson-audio.mjs` chạy Kokoro trên máy (giọng Mỹ `af_heart`), mỗi tốc độ sinh riêng một lần (0.8 / 1 / 1.2), không kéo giãn một bản. Chưa nối với nút bấm trong admin.
+- Chưa có: audio cho bài tập loại nghe (giai đoạn 5).
 
 ## Bài kiểm tra và bài thi
 
@@ -78,6 +85,9 @@ lib/assessments/           luật giờ, số lượt, tính điểm của lư�
 lib/datetime/              đổi giờ Việt Nam ↔ UTC
 lib/storage/               lưu file qua S3 API, luật cho bản thu âm
 app/api/recordings/        phát lại bản thu sau khi kiểm tra quyền
+app/api/lesson-audio/      phát audio của bài học sau khi kiểm tra quyền
+features/lesson-blocks/    các khối của bài học (schema + hiển thị)
+bridge/tts/                sinh giọng đọc trên máy (package riêng, không thuộc web app)
 lib/grading/               chấm tự động
 components/site/           header trang công khai và khu học viên
 features/<tên>/            server actions, form, bảng của từng thực thể

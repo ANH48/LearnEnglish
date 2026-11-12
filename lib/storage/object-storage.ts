@@ -51,9 +51,10 @@ export function presignUpload(key: string, mime: string): Promise<string> {
   });
 }
 
-export function presignDownload(key: string): Promise<string> {
+/** `lifetimeSeconds` is for files a page keeps playing long after it loaded, such as lesson audio. */
+export function presignDownload(key: string, lifetimeSeconds = URL_LIFETIME_SECONDS): Promise<string> {
   const { client, bucket } = storage();
-  return getSignedUrl(client, new GetObjectCommand({ Bucket: bucket, Key: key }), { expiresIn: URL_LIFETIME_SECONDS });
+  return getSignedUrl(client, new GetObjectCommand({ Bucket: bucket, Key: key }), { expiresIn: lifetimeSeconds });
 }
 
 /** Size and type of a stored file, or null when it was never uploaded. */

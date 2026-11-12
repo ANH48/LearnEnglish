@@ -1,4 +1,4 @@
-import { isAutoGraded } from "@/lib/grading/grade-exercise";
+import { isAutoGraded, isTeacherGradedFillBlank } from "@/lib/grading/grade-exercise";
 
 /**
  * What a learner's browser receives for an exercise. Built field by field from
@@ -9,7 +9,7 @@ export type LearnerExercise = {
   type: string;
   prompt: string;
   points: number;
-  /** False for writing and speaking, which a teacher grades. */
+  /** False for writing, speaking and fill-in exercises marked for the teacher, which a teacher grades. */
   autoGraded: boolean;
   options?: string[];
   /** Whether more than one option may be ticked. */
@@ -45,7 +45,11 @@ export function toLearnerExercise(exercise: StoredExercise): LearnerExercise {
       return { ...base, options: strings(data.options), multiple: Array.isArray(correct) && correct.length > 1 };
     }
     case "fill_blank":
-      return { ...base, text: typeof data.text === "string" ? data.text : "" };
+      return {
+        ...base,
+        autoGraded: !isTeacherGradedFillBlank(exercise.type, data),
+        text: typeof data.text === "string" ? data.text : "",
+      };
     case "matching":
       return { ...base, left: strings(data.left), right: strings(data.right) };
     case "ordering":
