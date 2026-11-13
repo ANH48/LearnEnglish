@@ -1,7 +1,8 @@
 import { BookOpen, CircleCheck, ClipboardCheck, Clock, MessageSquareHeart, MonitorSmartphone, PenLine, XCircle } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { SubmitButton } from "@/components/shared/submit-button";
+import { buttonVariants } from "@/components/ui/button";
 import { cancelEnrollmentAction, requestEnrollmentAction } from "@/features/enrollments/enrollment-actions";
 import type { EnrollmentStatus } from "@/features/enrollments/enrollment-state";
 import { courseCoverGradient } from "@/lib/course-cover";
@@ -76,9 +77,9 @@ function EnrollAction({ course, signedIn, status, note }: Props) {
         <StatusPill tone="wait" icon={<Clock />}>Đang chờ teacher duyệt</StatusPill>
         <p className="text-sm text-muted-foreground">Bạn chưa cần làm gì thêm. Khóa học sẽ mở ngay khi được duyệt.</p>
         <form action={cancelEnrollmentAction.bind(null, course.id)}>
-          <Button type="submit" variant="outline" className="w-full">
+          <SubmitButton variant="outline" className="w-full">
             Hủy yêu cầu
-          </Button>
+          </SubmitButton>
         </form>
       </div>
     );
@@ -91,9 +92,9 @@ function EnrollAction({ course, signedIn, status, note }: Props) {
         </StatusPill>
       )}
       <form action={requestEnrollmentAction.bind(null, course.id)}>
-        <Button type="submit" className={wide}>
+        <SubmitButton className={wide}>
           {status === null ? "Đăng ký khóa học" : "Gửi lại yêu cầu"}
-        </Button>
+        </SubmitButton>
       </form>
       <p className="text-center text-xs text-muted-foreground">Teacher của khóa sẽ duyệt yêu cầu của bạn.</p>
     </div>

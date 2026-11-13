@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/shared/submit-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { logoutCustomerAction, logoutStaffAction } from "@/features/auth/logout-actions";
 
@@ -22,9 +22,9 @@ export default async function BlockedPage({ searchParams }: { searchParams: Prom
             Hãy đăng xuất trước nếu muốn dùng tài khoản khác.
           </p>
           <form action={isStaff ? logoutStaffAction : logoutCustomerAction}>
-            <Button type="submit" variant="outline">
+            <SubmitButton variant="outline">
               Đăng xuất
-            </Button>
+            </SubmitButton>
           </form>
         </CardContent>
       </Card>

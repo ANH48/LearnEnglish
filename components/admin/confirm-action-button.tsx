@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/shared/submit-button";
 
 type Props = {
   action: () => Promise<void>;
@@ -18,9 +18,9 @@ export function ConfirmActionButton({ action, label, confirmMessage, variant = "
         if (confirmMessage && !window.confirm(confirmMessage)) event.preventDefault();
       }}
     >
-      <Button type="submit" size="sm" variant={variant}>
+      <SubmitButton size="sm" variant={variant}>
         {label}
-      </Button>
+      </SubmitButton>
     </form>
   );
 }

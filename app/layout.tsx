@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Be_Vietnam_Pro, Geist_Mono, Nunito } from "next/font/google";
+import { NavigationProgressBar } from "@/components/shared/navigation-progress-bar";
 import "./globals.css";
 
 // Both fonts ship Vietnamese glyphs; Nunito's rounded letters keep headings friendly.
@@ -16,7 +17,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="vi" className={`${body.variable} ${display.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        <NavigationProgressBar />
+        {children}
+      </body>
     </html>
   );
 }

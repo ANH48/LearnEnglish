@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/admin/page-header";
 import { InitialAvatar } from "@/components/brand/initial-avatar";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/shared/submit-button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { reviewEnrollmentAction } from "@/features/enrollments/enrollment-actions";
@@ -50,12 +50,12 @@ export default async function EnrollmentsPage() {
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <Input name="note" aria-label="Ghi chú cho học viên" placeholder="Lý do (nếu từ chối)" maxLength={300} className="h-9 w-full rounded-lg sm:w-56" />
-                    <Button type="submit" formAction={reviewEnrollmentAction.bind(null, enrollment.id, "approve")} className="h-9">
+                    <SubmitButton formAction={reviewEnrollmentAction.bind(null, enrollment.id, "approve")} className="h-9">
                       <Check className="size-4" /> Duyệt
-                    </Button>
-                    <Button type="submit" variant="outline" formAction={reviewEnrollmentAction.bind(null, enrollment.id, "reject")} className="h-9">
+                    </SubmitButton>
+                    <SubmitButton variant="outline" formAction={reviewEnrollmentAction.bind(null, enrollment.id, "reject")} className="h-9">
                       <X className="size-4" /> Từ chối
-                    </Button>
+                    </SubmitButton>
                   </div>
                 </form>
               ))}
@@ -92,9 +92,9 @@ export default async function EnrollmentsPage() {
                     <TableCell className="tabular-nums text-muted-foreground">{enrollment.reviewedAt ? vnDate(enrollment.reviewedAt) : "—"}</TableCell>
                     <TableCell className="text-right">
                       <form action={reviewEnrollmentAction.bind(null, enrollment.id, "remove")}>
-                        <Button type="submit" size="sm" variant="ghost" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
+                        <SubmitButton size="sm" variant="ghost" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
                           <UserMinus className="size-4" /> Gỡ khỏi khóa
-                        </Button>
+                        </SubmitButton>
                       </form>
                     </TableCell>
                   </TableRow>

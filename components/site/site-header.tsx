@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BrandLogo } from "@/components/brand/brand-logo";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { SubmitButton } from "@/components/shared/submit-button";
+import { buttonVariants } from "@/components/ui/button";
 import { logoutCustomerAction } from "@/features/auth/logout-actions";
 import { getCurrentCustomer } from "@/lib/auth/current-customer";
 import { readSession } from "@/lib/auth/session-cookies";
@@ -22,9 +23,9 @@ export async function SiteHeader() {
               </Link>
               <span className="hidden text-muted-foreground sm:inline">{customer.fullName}</span>
               <form action={logoutCustomerAction}>
-                <Button type="submit" variant="outline" size="sm">
+                <SubmitButton variant="outline" size="sm">
                   Đăng xuất
-                </Button>
+                </SubmitButton>
               </form>
             </>
           ) : staffSession ? (

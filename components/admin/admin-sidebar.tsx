@@ -1,6 +1,7 @@
 import { ExternalLink, LogOut } from "lucide-react";
 import Link from "next/link";
 import { BrandLogo } from "@/components/brand/brand-logo";
+import { SubmitPendingIcon } from "@/components/shared/submit-button";
 import { logoutStaffAction } from "@/features/auth/logout-actions";
 import type { CurrentStaff } from "@/lib/auth/current-staff";
 import { hasPermission } from "@/lib/permissions/check-permission";
@@ -26,7 +27,9 @@ export function AdminSidebar({ staff }: { staff: CurrentStaff }) {
           <span className="rounded-full bg-teal-300/15 px-2 py-0.5 text-[11px] font-semibold text-teal-200 ring-1 ring-teal-300/30">Admin</span>
           <form action={logoutStaffAction} className="md:hidden">
             <button type="submit" aria-label="Đăng xuất" className="grid size-10 cursor-pointer place-items-center rounded-lg text-white/70 hover:bg-white/10 hover:text-white">
-              <LogOut className="size-4" />
+              <SubmitPendingIcon>
+                <LogOut className="size-4" />
+              </SubmitPendingIcon>
             </button>
           </form>
         </div>
@@ -53,7 +56,9 @@ export function AdminSidebar({ staff }: { staff: CurrentStaff }) {
               title="Đăng xuất"
               className="grid size-9 cursor-pointer place-items-center rounded-lg text-white/60 transition-colors hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-teal-300 focus-visible:outline-none"
             >
-              <LogOut className="size-4" />
+              <SubmitPendingIcon>
+                <LogOut className="size-4" />
+              </SubmitPendingIcon>
             </button>
           </form>
         </div>

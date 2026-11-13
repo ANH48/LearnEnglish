@@ -26,6 +26,12 @@ Mọi action ghi dữ liệu theo đúng thứ tự:
 
 Action của form trả `ActionState` và dùng qua `<ActionForm>`. Action của nút (xóa, di chuyển) trả `void` và dùng qua `<ConfirmActionButton>`.
 
+## Trạng thái chờ
+
+- Chuyển trang: `NavigationProgressBar` (root layout) tự hiện thanh tiến trình, không cần làm gì thêm ở từng link.
+- Khu vực có layout riêng (`app/learn`, `app/admin/(panel)`) có `loading.tsx` dùng `PageLoading`.
+- Nút submit của `<form action>` dùng `<SubmitButton>` (`components/shared/submit-button.tsx`) thay cho `<Button type="submit">` để có spinner và khóa nút khi action đang chạy.
+
 ## Dữ liệu
 
 - Không gửi `answer_key` xuống trình duyệt của học viên.

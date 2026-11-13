@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/shared/submit-button";
 import { EMPTY_ACTION_STATE } from "@/lib/forms/action-state";
 import { startAttemptAction } from "./attempt-actions";
 
@@ -16,9 +16,9 @@ export function StartAttemptButton({ assessmentId, label }: { assessmentId: stri
         </p>
       )}
       <div>
-        <Button type="submit" disabled={pending}>
+        <SubmitButton>
           {pending ? "Đang mở…" : label}
-        </Button>
+        </SubmitButton>
       </div>
     </form>
   );

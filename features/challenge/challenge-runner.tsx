@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { SubmitButton } from "@/components/shared/submit-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { type Draft, emptyDraft, toPartialResponse, toResponse } from "@/features/exercise-player/exercise-draft";
@@ -43,9 +44,9 @@ export function ChallengeRunner({ sessionId, items, restoring, onRestart }: Prop
             </p>
             <p>{CHANGE_TEXT[result.change](result.streak.current)}</p>
             <form action={onRestart}>
-              <Button type="submit" variant="outline">
+              <SubmitButton variant="outline">
                 Làm lượt mới
-              </Button>
+              </SubmitButton>
             </form>
           </CardContent>
         </Card>

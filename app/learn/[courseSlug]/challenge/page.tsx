@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/shared/submit-button";
 import { startChallengeAction } from "@/features/challenge/challenge-actions";
 import { challengeLevel, openChallenge, readStreak } from "@/features/challenge/challenge-data";
 import { ChallengeRunner } from "@/features/challenge/challenge-runner";
@@ -37,9 +37,9 @@ export default async function ChallengePage({ params }: { params: Promise<{ cour
 
       {level > 0 && !session && (
         <form action={restart}>
-          <Button type="submit" size="lg">
+          <SubmitButton size="lg">
             Bắt đầu challenge · {level} bài học
-          </Button>
+          </SubmitButton>
         </form>
       )}
 
