@@ -65,6 +65,8 @@ async function main() {
   const previous = parseLessonBlocks(lesson.blocks);
   const previousFillBlankId = previous.flatMap((b) => (b.type === "exercise" ? [b.exerciseId] : []))[0];
   const previousQuizId = previous.flatMap((b) => (b.type === "vocabulary" && b.quizExerciseId ? [b.quizExerciseId] : []))[0];
+  // Exercises added later under the story (scripts/add-story-cloze-exercises.ts) are kept in place.
+  const storyExercises = previous.filter((b) => b.type === "exercise" && b.exerciseId !== previousFillBlankId);
 
   // Audio: a fixed key per file, so generating again replaces the old file.
   const { client, bucket } = storageClient();
@@ -119,6 +121,7 @@ async function main() {
       ...day.story,
       audio: { slow: await uploadAudio("story-slow"), normal: await uploadAudio("story-normal"), fast: await uploadAudio("story-fast") },
     },
+    ...storyExercises,
     {
       type: "vocabulary",
       title: day.vocabulary.title,
