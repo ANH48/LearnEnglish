@@ -5,30 +5,17 @@ import { buttonVariants } from "@/components/ui/button";
 import { deleteCourseAction } from "@/features/courses/course-actions";
 import { CourseForm } from "@/features/courses/course-form";
 import { loadCourseFormOptions } from "@/features/courses/course-form-options";
+import { loadCourseForEdit } from "@/features/courses/course-queries";
 import { ExerciseTable } from "@/features/exercises/exercise-table";
 import { LessonTable } from "@/features/lessons/lesson-table";
 import { requireCourseAccess } from "@/lib/auth/current-staff";
-import { db } from "@/lib/db";
 
 export default async function CourseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const actor = await requireCourseAccess("course.manage", id);
 
   const [course, options] = await Promise.all([
-    db.course.findUniqueOrThrow({
-      where: { id },
-      include: {
-        categories: true,
-        teachers: true,
-        lessons: {
-          where: { deletedAt: null },
-          orderBy: [{ position: "asc" }, { createdAt: "asc" }],
-          include: { _count: { select: { exercises: { where: { deletedAt: null } } } } },
-        },
-        // Exercises not tied to a lesson: only usable inside assessments.
-        exercises: { where: { deletedAt: null, lessonId: null }, orderBy: { position: "asc" } },
-      },
-    }),
+    loadCourseForEdit(id),
     loadCourseFormOptions(actor, id),
   ]);
 

@@ -3,7 +3,7 @@ import { SiteHeader, SiteMain } from "@/components/site/site-header";
 import { BookOpen, BookOpenCheck, Send, UserPlus } from "lucide-react";
 import { CourseCard } from "@/components/site/course-card";
 import { LandingHero } from "@/components/site/landing-hero";
-import { db } from "@/lib/db";
+import { listCategoriesWithPublishedCourses, listPublishedCourses } from "@/features/courses/course-queries";
 import { cn } from "@/lib/utils";
 
 const STEPS = [
@@ -25,25 +25,7 @@ export default async function HomePage({ searchParams }: Props) {
   // A repeated ?category= arrives as an array; only a single value is a valid filter.
   const raw = (await searchParams).category;
   const category = typeof raw === "string" ? raw : undefined;
-  const [categories, courses] = await Promise.all([
-    db.category.findMany({
-      where: { deletedAt: null, courses: { some: { course: { deletedAt: null, status: "published" } } } },
-      orderBy: { name: "asc" },
-    }),
-    db.course.findMany({
-      where: {
-        deletedAt: null,
-        status: "published",
-        ...(category ? { categories: { some: { category: { slug: category, deletedAt: null } } } } : {}),
-      },
-      orderBy: { createdAt: "desc" },
-      include: {
-        categories: { include: { category: true } },
-        teachers: { where: { staff: { deletedAt: null } }, select: { staff: { select: { fullName: true } } } },
-        _count: { select: { lessons: { where: { deletedAt: null, status: "published" } } } },
-      },
-    }),
-  ]);
+  const [categories, courses] = await Promise.all([listCategoriesWithPublishedCourses(), listPublishedCourses(category)]);
 
   return (
     <>

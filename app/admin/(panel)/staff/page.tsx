@@ -4,16 +4,12 @@ import { PageHeader, statusLabel } from "@/components/admin/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { deleteStaffAction } from "@/features/staff/staff-actions";
+import { listStaffWithGroups } from "@/features/staff/staff-queries";
 import { requirePermission } from "@/lib/auth/current-staff";
-import { db } from "@/lib/db";
 
 export default async function StaffListPage() {
   const actor = await requirePermission("staff.manage");
-  const staffList = await db.staff.findMany({
-    where: { deletedAt: null },
-    orderBy: { createdAt: "asc" },
-    include: { groups: { include: { group: true } } },
-  });
+  const staffList = await listStaffWithGroups();
 
   return (
     <>

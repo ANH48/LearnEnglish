@@ -6,9 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { responseText, solutionText } from "@/features/exercise-player/learner-exercise";
 import { gradeAnswerAction } from "@/features/manual-grading/grade-answer-action";
-import { gradingAnswerInclude, manualAnswerWhere, maxPointsFor } from "@/features/manual-grading/grading-queue";
+import { findGradableAnswer, maxPointsFor } from "@/features/manual-grading/grading-queue";
 import { requirePermission } from "@/lib/auth/current-staff";
-import { db } from "@/lib/db";
 import { requireUuid } from "@/lib/forms/require-uuid";
 
 /** One written or spoken answer: read or listen, give a score and a comment. Grading again replaces the earlier grade. */
@@ -16,7 +15,7 @@ export default async function GradeAnswerPage({ params }: { params: Promise<{ an
   const { answerId } = await params;
   const staff = await requirePermission("grading.manual");
   requireUuid(answerId);
-  const answer = await db.answer.findFirst({ where: { id: answerId, ...manualAnswerWhere(staff) }, include: gradingAnswerInclude });
+  const answer = await findGradableAnswer(staff, answerId);
   if (!answer) notFound();
 
   const max = maxPointsFor(answer);

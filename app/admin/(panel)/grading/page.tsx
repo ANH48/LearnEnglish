@@ -2,9 +2,8 @@ import Link from "next/link";
 import { PageHeader } from "@/components/admin/page-header";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { finalizeExpiredAttempts } from "@/features/attempts/finalize-attempt";
-import { manualAnswerWhere } from "@/features/manual-grading/grading-queue";
+import { listUngradedAnswers } from "@/features/manual-grading/grading-queue";
 import { requirePermission } from "@/lib/auth/current-staff";
-import { db } from "@/lib/db";
 import { courseScopeWhere } from "@/lib/permissions/course-scope";
 
 /** Written and spoken answers waiting for a teacher, oldest first. */
@@ -13,15 +12,7 @@ export default async function GradingQueuePage() {
   // Attempts that ran out of time are closed here, so their written answers show up.
   await finalizeExpiredAttempts({ assessment: { course: courseScopeWhere(staff) } });
 
-  const answers = await db.answer.findMany({
-    where: { ...manualAnswerWhere(staff), gradedAt: null },
-    orderBy: { updatedAt: "asc" },
-    include: {
-      customer: { select: { fullName: true } },
-      exercise: { select: { prompt: true, course: { select: { title: true } }, lesson: { select: { title: true } } } },
-      attempt: { select: { assessment: { select: { title: true } } } },
-    },
-  });
+  const answers = await listUngradedAnswers(staff);
 
   return (
     <>

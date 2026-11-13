@@ -1,11 +1,11 @@
 import { PageHeader } from "@/components/admin/page-header";
+import { listGroups } from "@/features/groups/group-queries";
 import { StaffForm } from "@/features/staff/staff-form";
 import { requirePermission } from "@/lib/auth/current-staff";
-import { db } from "@/lib/db";
 
 export default async function NewStaffPage() {
   const actor = await requirePermission("staff.manage");
-  const groups = await db.permissionGroup.findMany({ orderBy: { name: "asc" } });
+  const groups = await listGroups();
 
   return (
     <>

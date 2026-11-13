@@ -9,12 +9,13 @@ import { loadCourseDetail } from "@/features/course-detail/course-detail-query";
 import { CourseEnrollCard } from "@/features/course-detail/course-enroll-card";
 import { CourseHero } from "@/features/course-detail/course-hero";
 import { EXERCISE_TYPE_DISPLAY, EXERCISE_TYPE_ORDER } from "@/features/course-detail/exercise-type-display";
+import { findPublishedCourseTitle } from "@/features/courses/course-queries";
+import { findEnrollmentStatus } from "@/features/enrollments/enrollment-queries";
 import { ASSESSMENT_KIND_LABELS } from "@/lib/assessments/attempt-rules";
 import { getCurrentCustomer } from "@/lib/auth/current-customer";
-import { db } from "@/lib/db";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
-  const course = await db.course.findFirst({ where: { slug: (await params).slug, deletedAt: null, status: "published" }, select: { title: true } });
+  const course = await findPublishedCourseTitle((await params).slug);
   return { title: course?.title ?? "Khóa học" };
 }
 
@@ -24,9 +25,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
   if (!course) notFound();
 
   const customer = await getCurrentCustomer();
-  const enrollment = customer
-    ? await db.enrollment.findUnique({ where: { courseId_customerId: { courseId: course.id, customerId: customer.id } }, select: { status: true, note: true } })
-    : null;
+  const enrollment = customer ? await findEnrollmentStatus(course.id, customer.id) : null;
   const status = enrollment?.status ?? null;
   const skills = EXERCISE_TYPE_ORDER.filter((type) => course.exerciseTypes[type]);
 

@@ -2,21 +2,12 @@ import Link from "next/link";
 import { PageHeader, statusLabel } from "@/components/admin/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { listCoursesInScope } from "@/features/courses/course-queries";
 import { requirePermission } from "@/lib/auth/current-staff";
-import { db } from "@/lib/db";
-import { courseScopeWhere } from "@/lib/permissions/course-scope";
 
 export default async function CoursesPage() {
   const staff = await requirePermission("course.manage");
-  const courses = await db.course.findMany({
-    where: courseScopeWhere(staff),
-    orderBy: { createdAt: "desc" },
-    include: {
-      categories: { include: { category: true } },
-      teachers: { include: { staff: true } },
-      _count: { select: { lessons: { where: { deletedAt: null } } } },
-    },
-  });
+  const courses = await listCoursesInScope(staff);
 
   return (
     <>

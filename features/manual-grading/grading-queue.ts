@@ -1,6 +1,7 @@
 import "server-only";
 import type { Prisma } from "@prisma/client";
 import type { CurrentStaff } from "@/lib/auth/current-staff";
+import { db } from "@/lib/db";
 import { courseScopeWhere } from "@/lib/permissions/course-scope";
 
 /**
@@ -26,6 +27,24 @@ export const gradingAnswerInclude = {
   exercise: { include: { course: { select: { title: true } }, lesson: { select: { title: true } } } },
   attempt: { select: { assessment: { select: { title: true, exercises: true } } } },
 } satisfies Prisma.AnswerInclude;
+
+/** Answers waiting for a teacher, oldest first. */
+export function listUngradedAnswers(staff: CurrentStaff) {
+  return db.answer.findMany({
+    where: { ...manualAnswerWhere(staff), gradedAt: null },
+    orderBy: { updatedAt: "asc" },
+    include: {
+      customer: { select: { fullName: true } },
+      exercise: { select: { prompt: true, course: { select: { title: true } }, lesson: { select: { title: true } } } },
+      attempt: { select: { assessment: { select: { title: true } } } },
+    },
+  });
+}
+
+/** One answer the actor may grade, graded or not, or null. */
+export function findGradableAnswer(staff: CurrentStaff, answerId: string) {
+  return db.answer.findFirst({ where: { id: answerId, ...manualAnswerWhere(staff) }, include: gradingAnswerInclude });
+}
 
 type GradingAnswer = Prisma.AnswerGetPayload<{ include: typeof gradingAnswerInclude }>;
 

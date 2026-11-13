@@ -4,15 +4,12 @@ import { PageHeader, statusLabel } from "@/components/admin/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { deleteCustomerAction } from "@/features/customers/customer-actions";
+import { listCustomers } from "@/features/customers/customer-queries";
 import { requirePermission } from "@/lib/auth/current-staff";
-import { db } from "@/lib/db";
 
 export default async function CustomersPage() {
   await requirePermission("customer.manage");
-  const customers = await db.customer.findMany({
-    where: { deletedAt: null },
-    orderBy: { createdAt: "desc" },
-  });
+  const customers = await listCustomers();
 
   return (
     <>

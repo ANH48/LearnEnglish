@@ -4,16 +4,12 @@ import { PageHeader } from "@/components/admin/page-header";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { deleteCategoryAction } from "@/features/categories/category-actions";
 import { CategoryForm } from "@/features/categories/category-form";
+import { listCategoriesWithCourseCount } from "@/features/categories/category-queries";
 import { requirePermission } from "@/lib/auth/current-staff";
-import { db } from "@/lib/db";
 
 export default async function CategoriesPage() {
   await requirePermission("category.manage");
-  const categories = await db.category.findMany({
-    where: { deletedAt: null },
-    orderBy: { name: "asc" },
-    include: { _count: { select: { courses: { where: { course: { deletedAt: null } } } } } },
-  });
+  const categories = await listCategoriesWithCourseCount();
 
   return (
     <>

@@ -6,8 +6,8 @@ import { ExerciseTable } from "@/features/exercises/exercise-table";
 import { LessonBlockList } from "@/features/lesson-blocks/lesson-block-list";
 import { parseLessonBlocks } from "@/features/lesson-blocks/lesson-blocks";
 import { LessonForm } from "@/features/lessons/lesson-form";
+import { findLessonForEdit } from "@/features/lessons/lesson-queries";
 import { requireCourseAccess } from "@/lib/auth/current-staff";
-import { db } from "@/lib/db";
 import { requireUuid } from "@/lib/forms/require-uuid";
 
 /** `/lessons/new` creates a lesson; any other id edits that lesson and lists its exercises. */
@@ -26,10 +26,7 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
   }
 
   requireUuid(lessonId);
-  const lesson = await db.lesson.findFirst({
-    where: { id: lessonId, courseId, deletedAt: null },
-    include: { exercises: { where: { deletedAt: null }, orderBy: { position: "asc" } } },
-  });
+  const lesson = await findLessonForEdit(courseId, lessonId);
   if (!lesson) notFound();
   const blocks = parseLessonBlocks(lesson.blocks);
 

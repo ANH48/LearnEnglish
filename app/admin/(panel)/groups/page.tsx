@@ -3,15 +3,12 @@ import { ConfirmActionButton } from "@/components/admin/confirm-action-button";
 import { PageHeader } from "@/components/admin/page-header";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { deleteGroupAction } from "@/features/groups/group-actions";
+import { listGroupsWithCounts } from "@/features/groups/group-queries";
 import { requireSuperadmin } from "@/lib/auth/current-staff";
-import { db } from "@/lib/db";
 
 export default async function GroupsPage() {
   await requireSuperadmin();
-  const groups = await db.permissionGroup.findMany({
-    orderBy: { name: "asc" },
-    include: { _count: { select: { permissions: true, staff: true } } },
-  });
+  const groups = await listGroupsWithCounts();
 
   return (
     <>

@@ -3,32 +3,15 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { EmptyState } from "@/components/shared/empty-state";
 import { buttonVariants } from "@/components/ui/button";
+import { listMyEnrollments } from "@/features/enrollments/enrollment-queries";
 import { type MyCourse, MyCourseCard } from "@/features/my-courses/my-course-card";
 import { requireCustomer } from "@/lib/auth/current-customer";
-import { db } from "@/lib/db";
 import { cn } from "@/lib/utils";
 
 /** The learner's courses with each request's status, the course's teachers and, once approved, progress. */
 export default async function MyCoursesPage() {
   const customer = await requireCustomer();
-  const enrollments = await db.enrollment.findMany({
-    where: { customerId: customer.id, course: { deletedAt: null, status: "published" } },
-    orderBy: { updatedAt: "desc" },
-    include: {
-      course: {
-        select: {
-          slug: true,
-          title: true,
-          categories: { where: { category: { deletedAt: null } }, select: { category: { select: { name: true } } } },
-          teachers: { where: { staff: { deletedAt: null } }, select: { staff: { select: { fullName: true } } } },
-          lessons: {
-            where: { deletedAt: null, status: "published" },
-            select: { progress: { where: { customerId: customer.id }, select: { lessonId: true } } },
-          },
-        },
-      },
-    },
-  });
+  const enrollments = await listMyEnrollments(customer.id);
 
   const items: MyCourse[] = enrollments.map((e) => ({
     id: e.id,

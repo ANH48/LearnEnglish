@@ -3,9 +3,10 @@ import { ConfirmActionButton } from "@/components/admin/confirm-action-button";
 import { PageHeader } from "@/components/admin/page-header";
 import { deleteAssessmentAction } from "@/features/assessments/assessment-actions";
 import { AssessmentForm } from "@/features/assessments/assessment-form";
+import { findAssessmentForEdit } from "@/features/assessments/assessment-queries";
 import { AssessmentQuestionPicker } from "@/features/assessments/assessment-question-picker";
+import { listCourseExercisesForPicker } from "@/features/exercises/exercise-queries";
 import { requireCourseAccess } from "@/lib/auth/current-staff";
-import { db } from "@/lib/db";
 import { requireUuid } from "@/lib/forms/require-uuid";
 
 /** `/assessments/new` creates an assessment; any other id edits it and picks its questions. */
@@ -25,15 +26,8 @@ export default async function AssessmentPage({ params }: { params: Promise<{ id:
 
   requireUuid(assessmentId);
   const [assessment, exercises] = await Promise.all([
-    db.assessment.findFirst({
-      where: { id: assessmentId, courseId, deletedAt: null },
-      include: { exercises: true, _count: { select: { attempts: true } } },
-    }),
-    db.exercise.findMany({
-      where: { courseId, deletedAt: null },
-      orderBy: [{ lesson: { position: "asc" } }, { position: "asc" }, { createdAt: "asc" }],
-      select: { id: true, prompt: true, type: true, points: true, lesson: { select: { title: true } } },
-    }),
+    findAssessmentForEdit(courseId, assessmentId),
+    listCourseExercisesForPicker(courseId),
   ]);
   if (!assessment) notFound();
   const picked = new Map(assessment.exercises.map((link) => [link.exerciseId, link]));

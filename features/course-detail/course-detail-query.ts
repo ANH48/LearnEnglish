@@ -1,13 +1,12 @@
 import "server-only";
 import type { ExerciseType } from "@prisma/client";
 import { db } from "@/lib/db";
+import { visible } from "@/lib/visible-content-filter";
 
 /**
  * Everything the public course page shows, in one load. Only published, not
  * deleted content counts; lesson bodies and answers never leave the server here.
  */
-
-const visible = { deletedAt: null, status: "published" } as const;
 
 export async function loadCourseDetail(slug: string) {
   const course = await db.course.findFirst({

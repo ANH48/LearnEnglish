@@ -90,7 +90,9 @@ features/lesson-blocks/    các khối của bài học (schema + hiển thị)
 bridge/tts/                sinh giọng đọc trên máy (package riêng, không thuộc web app)
 lib/grading/               chấm tự động
 components/site/           header trang công khai và khu học viên
-features/<tên>/            server actions, form, bảng của từng thực thể
+features/<tên>/            của từng thực thể: *-queries.ts (đọc DB), *-actions.ts (ghi DB), form, bảng
+lib/db.ts                  Prisma client; chỉ features/ và lib/ được import, app/ thì không
+lib/visible-content-filter.ts   điều kiện "đã publish, chưa xóa" dùng chung cho các query của học viên
 lib/auth/                  JWT, cookie, mật khẩu, tài khoản hiện tại
 lib/permissions/           danh sách quyền, kiểm tra quyền, phạm vi khóa học
 lib/forms/                 kiểu trả về của form action, slugify

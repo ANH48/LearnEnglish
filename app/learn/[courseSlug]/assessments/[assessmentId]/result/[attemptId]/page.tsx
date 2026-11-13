@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { findMyAttemptWithAnswers } from "@/features/attempts/attempt-queries";
 import { loadAssessmentQuestions, requireLearnerAssessment } from "@/features/attempts/learner-assessment";
 import { responseText, solutionText } from "@/features/exercise-player/learner-exercise";
 import { canSeeSolutions } from "@/lib/assessments/attempt-rules";
 import { formatVietnamDateTime } from "@/lib/datetime/vietnam-time";
-import { db } from "@/lib/db";
 import { requireUuid } from "@/lib/forms/require-uuid";
 import { needsManualGrading } from "@/lib/grading/grade-exercise";
 
@@ -16,10 +16,7 @@ export default async function AttemptResultPage({ params }: Props) {
   const { customer, course, assessment, now } = await requireLearnerAssessment(courseSlug, assessmentId);
   requireUuid(attemptId);
 
-  const attempt = await db.attempt.findFirst({
-    where: { id: attemptId, assessmentId, customerId: customer.id },
-    include: { answers: true },
-  });
+  const attempt = await findMyAttemptWithAnswers(attemptId, assessmentId, customer.id);
   if (!attempt) notFound();
   const base = `/learn/${course.slug}/assessments/${assessment.id}`;
   if (attempt.status === "in_progress") redirect(`${base}/take`);

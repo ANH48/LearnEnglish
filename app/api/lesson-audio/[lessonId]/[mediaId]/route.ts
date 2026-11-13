@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { isApprovedLearner } from "@/features/enrollments/enrollment-queries";
 import { blockAudioIds, parseLessonBlocks } from "@/features/lesson-blocks/lesson-blocks";
+import { findAudioFile, findLessonAudioSource } from "@/features/lessons/lesson-queries";
 import { getCurrentCustomer } from "@/lib/auth/current-customer";
 import { getCurrentStaff } from "@/lib/auth/current-staff";
-import { db } from "@/lib/db";
 import { canAccessCourse } from "@/lib/permissions/course-scope";
 import { presignDownload } from "@/lib/storage/object-storage";
 
@@ -20,10 +21,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ les
   const { lessonId, mediaId } = await params;
   if (!z.uuid().safeParse(lessonId).success || !z.uuid().safeParse(mediaId).success) return notFound();
 
-  const lesson = await db.lesson.findFirst({
-    where: { id: lessonId, deletedAt: null, course: { deletedAt: null } },
-    select: { blocks: true, status: true, courseId: true, course: { select: { status: true } } },
-  });
+  const lesson = await findLessonAudioSource(lessonId);
   if (!lesson || !blockAudioIds(parseLessonBlocks(lesson.blocks)).includes(mediaId)) return notFound();
 
   const customer = await getCurrentCustomer();
@@ -31,17 +29,14 @@ export async function GET(_request: Request, { params }: { params: Promise<{ les
     customer !== null &&
     lesson.status === "published" &&
     lesson.course.status === "published" &&
-    (await db.enrollment.findFirst({
-      where: { courseId: lesson.courseId, customerId: customer.id, status: "approved" },
-      select: { id: true },
-    })) !== null;
+    (await isApprovedLearner(lesson.courseId, customer.id));
   if (!allowed) {
     const staff = await getCurrentStaff();
     allowed = staff !== null && (await canAccessCourse(staff, lesson.courseId));
   }
   if (!allowed) return notFound();
 
-  const media = await db.mediaFile.findFirst({ where: { id: mediaId, kind: "audio" }, select: { storageKey: true } });
+  const media = await findAudioFile(mediaId);
   if (!media) return notFound();
   // Not cached, so every page load passes the permission check again and gets a fresh URL.
   return NextResponse.redirect(await presignDownload(media.storageKey, URL_LIFETIME_SECONDS), { headers: { "Cache-Control": "no-store" } });

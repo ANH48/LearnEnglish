@@ -6,9 +6,9 @@ import { ExercisePlayer } from "@/features/exercise-player/exercise-player";
 import { toLearnerExercise } from "@/features/exercise-player/learner-exercise";
 import { LessonBlockList } from "@/features/lesson-blocks/lesson-block-list";
 import { blockExerciseIds, parseLessonBlocks } from "@/features/lesson-blocks/lesson-blocks";
+import { listPublishedLessonIds, loadLearnerLesson } from "@/features/lessons/lesson-queries";
 import { setLessonCompletedAction } from "@/features/progress/lesson-progress-actions";
 import { requireApprovedCourse } from "@/lib/auth/current-customer";
-import { db } from "@/lib/db";
 import { requireUuid } from "@/lib/forms/require-uuid";
 
 type Props = { params: Promise<{ courseSlug: string; lessonId: string }> };
@@ -20,29 +20,8 @@ export default async function LearnLessonPage({ params }: Props) {
   requireUuid(lessonId);
 
   const [lesson, siblings] = await Promise.all([
-    db.lesson.findFirst({
-      where: { id: lessonId, courseId: course.id, deletedAt: null, status: "published" },
-      include: {
-        exercises: {
-          where: { deletedAt: null, status: "published" },
-          orderBy: [{ position: "asc" }, { createdAt: "asc" }],
-          include: {
-            answers: {
-              where: { customerId: customer.id, attemptId: null },
-              orderBy: { updatedAt: "desc" },
-              select: { id: true, autoScore: true, manualScore: true, feedback: true, response: true, mediaId: true },
-              take: 1,
-            },
-          },
-        },
-        progress: { where: { customerId: customer.id }, select: { lessonId: true } },
-      },
-    }),
-    db.lesson.findMany({
-      where: { courseId: course.id, deletedAt: null, status: "published" },
-      orderBy: [{ position: "asc" }, { createdAt: "asc" }],
-      select: { id: true },
-    }),
+    loadLearnerLesson(course.id, lessonId, customer.id),
+    listPublishedLessonIds(course.id),
   ]);
   if (!lesson) notFound();
 

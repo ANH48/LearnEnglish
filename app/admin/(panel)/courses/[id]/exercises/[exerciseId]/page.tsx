@@ -2,8 +2,9 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/admin/page-header";
 import { type ExerciseTypeName, toEditorPayload } from "@/features/exercises/exercise-content";
 import { ExerciseForm } from "@/features/exercises/exercise-form";
+import { findExerciseForEdit } from "@/features/exercises/exercise-queries";
+import { listCourseLessonOptions } from "@/features/lessons/lesson-queries";
 import { requireCourseAccess } from "@/lib/auth/current-staff";
-import { db } from "@/lib/db";
 import { requireUuid } from "@/lib/forms/require-uuid";
 
 type Props = {
@@ -16,11 +17,7 @@ export default async function ExercisePage({ params, searchParams }: Props) {
   const { id: courseId, exerciseId } = await params;
   await requireCourseAccess("course.manage", courseId);
 
-  const lessons = await db.lesson.findMany({
-    where: { courseId, deletedAt: null },
-    orderBy: { position: "asc" },
-    select: { id: true, title: true },
-  });
+  const lessons = await listCourseLessonOptions(courseId);
   const back = { href: `/admin/courses/${courseId}`, label: "Khóa học" };
 
   if (exerciseId === "new") {
@@ -38,7 +35,7 @@ export default async function ExercisePage({ params, searchParams }: Props) {
   }
 
   requireUuid(exerciseId);
-  const exercise = await db.exercise.findFirst({ where: { id: exerciseId, courseId, deletedAt: null } });
+  const exercise = await findExerciseForEdit(courseId, exerciseId);
   if (!exercise) notFound();
   const type = exercise.type as ExerciseTypeName;
 

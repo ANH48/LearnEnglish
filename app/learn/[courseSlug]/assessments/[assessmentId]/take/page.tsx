@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
+import { findRunningAttempt } from "@/features/attempts/attempt-queries";
 import { AttemptRunner } from "@/features/attempts/attempt-runner";
 import { loadAssessmentQuestions, requireLearnerAssessment } from "@/features/attempts/learner-assessment";
 import { toLearnerExercise } from "@/features/exercise-player/learner-exercise";
-import { db } from "@/lib/db";
 
 type Props = { params: Promise<{ courseSlug: string; assessmentId: string }> };
 
@@ -11,10 +11,7 @@ export default async function TakeAssessmentPage({ params }: Props) {
   const { courseSlug, assessmentId } = await params;
   const { customer, course, assessment, now } = await requireLearnerAssessment(courseSlug, assessmentId);
 
-  const attempt = await db.attempt.findFirst({
-    where: { assessmentId, customerId: customer.id, status: "in_progress" },
-    include: { answers: { select: { id: true, exerciseId: true, response: true, mediaId: true } } },
-  });
+  const attempt = await findRunningAttempt(assessmentId, customer.id);
   if (!attempt) redirect(`/learn/${course.slug}/assessments/${assessment.id}`);
 
   const questions = await loadAssessmentQuestions(assessmentId);

@@ -1,9 +1,9 @@
 import Link from "next/link";
+import { listMyAttempts, sumAssessmentQuestions } from "@/features/attempts/attempt-queries";
 import { requireLearnerAssessment } from "@/features/attempts/learner-assessment";
 import { StartAttemptButton } from "@/features/attempts/start-attempt-button";
 import { ASSESSMENT_KIND_LABELS, type AssessmentKindName, START_CHECK_MESSAGES, checkCanStart } from "@/lib/assessments/attempt-rules";
 import { formatVietnamDateTime } from "@/lib/datetime/vietnam-time";
-import { db } from "@/lib/db";
 
 type Props = { params: Promise<{ courseSlug: string; assessmentId: string }> };
 
@@ -15,8 +15,8 @@ export default async function LearnAssessmentPage({ params }: Props) {
   const { customer, course, assessment, now } = await requireLearnerAssessment(courseSlug, assessmentId);
 
   const [attempts, questions] = await Promise.all([
-    db.attempt.findMany({ where: { assessmentId, customerId: customer.id }, orderBy: { startedAt: "asc" } }),
-    db.assessmentExercise.aggregate({ where: { assessmentId }, _count: true, _sum: { points: true } }),
+    listMyAttempts(assessmentId, customer.id),
+    sumAssessmentQuestions(assessmentId),
   ]);
   const running = attempts.some((a) => a.status === "in_progress");
   const check = checkCanStart(assessment, attempts.length, now);

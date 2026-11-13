@@ -1,28 +1,16 @@
 import { ArrowRight, BookOpen, FileText, GraduationCap, type LucideIcon, PenTool, UserCheck } from "lucide-react";
 import Link from "next/link";
 import { PageHeader } from "@/components/admin/page-header";
-import { manualAnswerWhere } from "@/features/manual-grading/grading-queue";
+import { loadDashboardCounts } from "@/features/admin-dashboard/admin-dashboard-queries";
 import { requireStaff } from "@/lib/auth/current-staff";
-import { db } from "@/lib/db";
 import { hasPermission } from "@/lib/permissions/check-permission";
-import { courseScopeWhere } from "@/lib/permissions/course-scope";
 
 type Tile = { label: string; value: number; icon: LucideIcon; tone: string; href?: string; hint?: string };
 
 /** Home of the admin area: counts for the actor's scope and what is waiting for them. */
 export default async function AdminDashboardPage() {
   const staff = await requireStaff();
-  const scope = courseScopeWhere(staff);
-  const canReview = hasPermission(staff, "enrollment.review");
-  const canGrade = hasPermission(staff, "grading.manual");
-
-  const [courses, lessons, customers, pendingEnrollments, toGrade] = await Promise.all([
-    db.course.count({ where: scope }),
-    db.lesson.count({ where: { deletedAt: null, course: scope } }),
-    hasPermission(staff, "customer.manage") ? db.customer.count({ where: { deletedAt: null } }) : null,
-    canReview ? db.enrollment.count({ where: { status: "pending", course: scope, customer: { deletedAt: null } } }) : null,
-    canGrade ? db.answer.count({ where: { ...manualAnswerWhere(staff), gradedAt: null } }) : null,
-  ]);
+  const { courses, lessons, customers, pendingEnrollments, toGrade } = await loadDashboardCounts(staff);
 
   const waiting: Tile[] = [
     ...(pendingEnrollments === null

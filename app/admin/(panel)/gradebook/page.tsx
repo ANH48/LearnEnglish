@@ -2,16 +2,18 @@ import { FormField, nativeSelectClass } from "@/components/admin/form-field";
 import { PageHeader } from "@/components/admin/page-header";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { listGradebookAssessments } from "@/features/assessments/assessment-queries";
+import { listCourseAttemptScores } from "@/features/attempts/attempt-queries";
 import { finalizeExpiredAttempts } from "@/features/attempts/finalize-attempt";
+import { listCourseTitlesInScope } from "@/features/courses/course-queries";
+import { listApprovedLearners } from "@/features/enrollments/enrollment-queries";
 import { gradebookCell } from "@/features/gradebook/gradebook-cell";
 import { requirePermission } from "@/lib/auth/current-staff";
-import { db } from "@/lib/db";
-import { courseScopeWhere } from "@/lib/permissions/course-scope";
 
 /** Scores of one course: a row per approved learner, a column per assessment, best finished score in each cell. */
 export default async function GradebookPage({ searchParams }: { searchParams: Promise<{ course?: string | string[] }> }) {
   const staff = await requirePermission("grading.manual");
-  const courses = await db.course.findMany({ where: courseScopeWhere(staff), orderBy: { title: "asc" }, select: { id: true, title: true } });
+  const courses = await listCourseTitlesInScope(staff);
   const { course: requested } = await searchParams;
   // An id outside the actor's scope simply does not match and falls back to the first course.
   const course = courses.find((c) => c.id === requested) ?? courses[0];
@@ -27,17 +29,9 @@ export default async function GradebookPage({ searchParams }: { searchParams: Pr
 
   await finalizeExpiredAttempts({ assessment: { courseId: course.id } });
   const [assessments, enrollments, attempts] = await Promise.all([
-    db.assessment.findMany({
-      where: { courseId: course.id, deletedAt: null },
-      orderBy: { createdAt: "asc" },
-      select: { id: true, title: true, exercises: { select: { points: true } } },
-    }),
-    db.enrollment.findMany({
-      where: { courseId: course.id, status: "approved", customer: { deletedAt: null } },
-      orderBy: { customer: { fullName: "asc" } },
-      select: { customer: { select: { id: true, fullName: true, email: true } } },
-    }),
-    db.attempt.findMany({ where: { assessment: { courseId: course.id } }, select: { assessmentId: true, customerId: true, status: true, score: true } }),
+    listGradebookAssessments(course.id),
+    listApprovedLearners(course.id),
+    listCourseAttemptScores(course.id),
   ]);
   const cell = (customerId: string, assessment: (typeof assessments)[number]) =>
     gradebookCell(

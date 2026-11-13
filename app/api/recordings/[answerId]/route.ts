@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { findRecordingAnswer } from "@/features/recordings/recording-queries";
 import { getCurrentCustomer } from "@/lib/auth/current-customer";
 import { getCurrentStaff } from "@/lib/auth/current-staff";
-import { db } from "@/lib/db";
 import { hasPermission } from "@/lib/permissions/check-permission";
 import { canAccessCourse } from "@/lib/permissions/course-scope";
 import { presignDownload } from "@/lib/storage/object-storage";
@@ -18,10 +18,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ans
   const { answerId } = await params;
   if (!z.uuid().safeParse(answerId).success) return notFound();
 
-  const answer = await db.answer.findFirst({
-    where: { id: answerId, mediaId: { not: null } },
-    select: { customerId: true, media: { select: { storageKey: true } }, exercise: { select: { courseId: true } } },
-  });
+  const answer = await findRecordingAnswer(answerId);
   if (!answer?.media) return notFound();
 
   const customer = await getCurrentCustomer();

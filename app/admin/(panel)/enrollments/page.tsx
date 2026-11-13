@@ -7,24 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { reviewEnrollmentAction } from "@/features/enrollments/enrollment-actions";
+import { listReviewableEnrollments } from "@/features/enrollments/enrollment-queries";
 import { requirePermission } from "@/lib/auth/current-staff";
-import { db } from "@/lib/db";
-import { courseScopeWhere } from "@/lib/permissions/course-scope";
 
 const vnDate = (date: Date) => date.toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
 
 /** Requests waiting for review and learners already in a course, limited to the actor's courses. */
 export default async function EnrollmentsPage() {
   const staff = await requirePermission("enrollment.review");
-  const enrollments = await db.enrollment.findMany({
-    where: {
-      status: { in: ["pending", "approved"] },
-      course: courseScopeWhere(staff),
-      customer: { deletedAt: null },
-    },
-    orderBy: { updatedAt: "asc" },
-    include: { course: { select: { title: true } }, customer: { select: { fullName: true, email: true } } },
-  });
+  const enrollments = await listReviewableEnrollments(staff);
   const pending = enrollments.filter((e) => e.status === "pending");
   const approved = enrollments.filter((e) => e.status === "approved");
 

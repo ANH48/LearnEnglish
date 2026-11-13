@@ -4,6 +4,16 @@
 - Giao diện tiếng Việt. Comment và tên biến tiếng Anh.
 - Dùng component shadcn trong `components/ui/` (bản Base UI, không có `asChild`). Link dạng nút: `className={buttonVariants()}`. Select và checkbox trong form dùng thẻ gốc của trình duyệt.
 
+## Đọc và ghi database
+
+Tách đọc và ghi theo từng feature, không có lớp repository chung:
+
+- **Đọc (query):** hàm trong `features/<tên>/<tên>-queries.ts`, bắt đầu bằng `import "server-only"`. Tên hàm nói rõ ai đọc và đọc gì (`listLearnerLessons`, `findLessonForEdit`).
+- **Ghi (command):** server action trong `features/<tên>/<tên>-actions.ts`, theo thứ tự ở mục dưới.
+- File trong `app/` không import `@/lib/db` (ESLint chặn). Page kiểm tra quyền, gọi hàm query, rồi render.
+- Hàm query không tự kiểm tra quyền: page hoặc action gọi `require...` trước, rồi truyền `staff`, `customerId`, `courseId` vào để hàm lọc.
+- Luật lọc viết một lần và dùng lại: `visible` (`lib/visible-content-filter.ts`) cho nội dung học viên được thấy, `courseScopeWhere(staff)` cho phạm vi khóa học của staff, `manualAnswerWhere(staff)` cho bài chấm tay.
+
 ## Server action
 
 Mọi action ghi dữ liệu theo đúng thứ tự:

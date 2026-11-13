@@ -1,8 +1,9 @@
 import { notFound, redirect } from "next/navigation";
 import { PageHeader } from "@/components/admin/page-header";
+import { listGroups } from "@/features/groups/group-queries";
 import { StaffForm } from "@/features/staff/staff-form";
+import { findStaffWithGroups } from "@/features/staff/staff-queries";
 import { requirePermission } from "@/lib/auth/current-staff";
-import { db } from "@/lib/db";
 import { requireUuid } from "@/lib/forms/require-uuid";
 
 export default async function EditStaffPage({ params }: { params: Promise<{ id: string }> }) {
@@ -10,8 +11,8 @@ export default async function EditStaffPage({ params }: { params: Promise<{ id: 
   const { id } = await params;
   requireUuid(id);
   const [staff, groups] = await Promise.all([
-    db.staff.findFirst({ where: { id, deletedAt: null }, include: { groups: true } }),
-    db.permissionGroup.findMany({ orderBy: { name: "asc" } }),
+    findStaffWithGroups(id),
+    listGroups(),
   ]);
   if (!staff) notFound();
   if (staff.isSuperadmin && !actor.isSuperadmin) redirect("/admin/forbidden");

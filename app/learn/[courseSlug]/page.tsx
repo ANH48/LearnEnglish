@@ -1,31 +1,19 @@
 import { CheckCircle2, Circle } from "lucide-react";
 import Link from "next/link";
+import { listPublishedAssessments } from "@/features/assessments/assessment-queries";
+import { listLearnerLessons } from "@/features/lessons/lesson-queries";
 import { ASSESSMENT_KIND_LABELS, type AssessmentKindName } from "@/lib/assessments/attempt-rules";
 import { ChallengeCourseCard } from "@/features/challenge/challenge-course-card";
 import { lessonExerciseCounts } from "@/features/progress/lesson-exercise-completion";
 import { ProgressBar } from "@/features/progress/progress-bar";
 import { requireApprovedCourse } from "@/lib/auth/current-customer";
-import { db } from "@/lib/db";
 
 /** Lesson list of a course the learner is approved for. Lessons are not locked: any can be opened. */
 export default async function LearnCoursePage({ params }: { params: Promise<{ courseSlug: string }> }) {
   const { courseSlug } = await params;
   const { customer, course } = await requireApprovedCourse(courseSlug);
 
-  const assessments = await db.assessment.findMany({
-    where: { courseId: course.id, deletedAt: null, status: "published" },
-    orderBy: { createdAt: "asc" },
-    select: { id: true, title: true, kind: true, durationMinutes: true },
-  });
-  const lessons = await db.lesson.findMany({
-    where: { courseId: course.id, deletedAt: null, status: "published" },
-    orderBy: [{ position: "asc" }, { createdAt: "asc" }],
-    select: {
-      id: true,
-      title: true,
-      progress: { where: { customerId: customer.id }, select: { lessonId: true } },
-    },
-  });
+  const [assessments, lessons] = await Promise.all([listPublishedAssessments(course.id), listLearnerLessons(course.id, customer.id)]);
   const counts = await lessonExerciseCounts(customer.id, lessons.map((lesson) => lesson.id));
   const done = lessons.filter((lesson) => lesson.progress.length > 0).length;
 

@@ -3,8 +3,8 @@ import { ActionForm } from "@/components/admin/action-form";
 import { PageHeader } from "@/components/admin/page-header";
 import { AccountFormFields } from "@/features/accounts/account-form-fields";
 import { saveCustomerAction } from "@/features/customers/customer-actions";
+import { findCustomer } from "@/features/customers/customer-queries";
 import { requirePermission } from "@/lib/auth/current-staff";
-import { db } from "@/lib/db";
 import { requireUuid } from "@/lib/forms/require-uuid";
 
 /** `/admin/customers/new` creates a learner; any other id edits that learner. */
@@ -13,7 +13,7 @@ export default async function CustomerFormPage({ params }: { params: Promise<{ i
   const { id } = await params;
   const isNew = id === "new";
   if (!isNew) requireUuid(id);
-  const customer = isNew ? null : await db.customer.findFirst({ where: { id, deletedAt: null } });
+  const customer = isNew ? null : await findCustomer(id);
   if (!isNew && !customer) notFound();
 
   return (

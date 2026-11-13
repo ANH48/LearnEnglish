@@ -3,27 +3,14 @@ import { PageHeader, statusLabel } from "@/components/admin/page-header";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { listAssessmentsByCourse } from "@/features/assessments/assessment-queries";
 import { ASSESSMENT_KIND_LABELS, type AssessmentKindName } from "@/lib/assessments/attempt-rules";
 import { requirePermission } from "@/lib/auth/current-staff";
-import { db } from "@/lib/db";
-import { courseScopeWhere } from "@/lib/permissions/course-scope";
 
 /** Tests and exams of every course the actor may touch, grouped by course. */
 export default async function AssessmentsPage() {
   const staff = await requirePermission("assessment.manage");
-  const courses = await db.course.findMany({
-    where: courseScopeWhere(staff),
-    orderBy: { title: "asc" },
-    select: {
-      id: true,
-      title: true,
-      assessments: {
-        where: { deletedAt: null },
-        orderBy: { createdAt: "asc" },
-        include: { _count: { select: { exercises: true, attempts: true } } },
-      },
-    },
-  });
+  const courses = await listAssessmentsByCourse(staff);
 
   return (
     <>
