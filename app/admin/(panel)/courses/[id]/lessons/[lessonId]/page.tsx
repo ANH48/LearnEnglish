@@ -52,10 +52,10 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
             <div className="grid gap-1">
               <h2 className="text-lg font-semibold">Nội dung theo khối (xem thử)</h2>
               <p className="text-sm text-muted-foreground">
-                Đúng những gì học viên thấy và nghe, theo thứ tự: câu, cấu trúc, truyện, từ vựng, bản dịch. Hai bài tập nằm ở bảng phía trên. Phần này được nhập bằng script, chưa sửa được ở đây.
+                Đúng những gì học viên thấy và nghe, theo thứ tự: câu, cấu trúc, truyện (kèm bản dịch), từ vựng. Hai bài tập nằm ở bảng phía trên. Phần này được nhập bằng script, chưa sửa được ở đây.
               </p>
             </div>
-            <LessonBlockList lessonId={lesson.id} blocks={blocks} exercises={new Map()} />
+            <LessonBlockList lessonId={lesson.id} blocks={blocks} exerciseIds={new Set()} />
           </section>
         )}
       </div>

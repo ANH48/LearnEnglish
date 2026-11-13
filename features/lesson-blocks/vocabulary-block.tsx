@@ -1,34 +1,16 @@
-"use client";
-
-import { type ReactNode, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { ExerciseStatus, OpenExerciseButton } from "@/features/lesson-exercises/lesson-exercise-dialog";
 import type { VocabularyBlock as VocabularyBlockData } from "./lesson-blocks";
 
-type Props = { block: VocabularyBlockData; quiz: ReactNode | null };
+type Props = { block: VocabularyBlockData; quizExerciseId: string | null };
 
 /**
- * Words from the story with their meanings. When the learner is ready, the
- * meanings are hidden and the quiz (an exercise of the lesson) takes their place.
+ * Words from the story with their meanings. When the learner is ready, the quiz
+ * (an exercise of the lesson) opens in the exercise popup, which covers the meanings.
  */
-export function VocabularyBlock({ block, quiz }: Props) {
-  const [quizShown, setQuizShown] = useState(false);
-
-  if (quizShown && quiz) {
-    return (
-      <div className="grid gap-4">
-        {quiz}
-        <div>
-          <Button type="button" variant="ghost" size="sm" onClick={() => setQuizShown(false)}>
-            ← Xem lại các từ
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
+export function VocabularyBlock({ block, quizExerciseId }: Props) {
   return (
     <div className="grid gap-4">
-      <ul className="grid gap-2 sm:grid-cols-2">
+      <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {block.items.map((item) => (
           <li key={item.en} className="flex items-baseline justify-between gap-3 rounded-xl border bg-card px-3 py-2">
             <span className="font-bold" lang="en">
@@ -38,12 +20,13 @@ export function VocabularyBlock({ block, quiz }: Props) {
           </li>
         ))}
       </ul>
-      {quiz && (
+      {quizExerciseId && (
         <div className="flex flex-wrap items-center gap-3">
-          <Button type="button" onClick={() => setQuizShown(true)}>
+          <OpenExerciseButton exerciseId={quizExerciseId} className="h-10 px-4">
             Tôi nhớ rồi, kiểm tra →
-          </Button>
-          <span className="text-sm text-muted-foreground">Nghĩa sẽ được ẩn đi, bạn gõ lại bằng tiếng Việt.</span>
+          </OpenExerciseButton>
+          <ExerciseStatus exerciseId={quizExerciseId} />
+          <span className="text-sm text-muted-foreground">Bài kiểm tra mở trong cửa sổ riêng, bạn gõ lại nghĩa bằng tiếng Việt.</span>
         </div>
       )}
     </div>

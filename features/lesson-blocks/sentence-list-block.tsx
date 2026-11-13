@@ -46,7 +46,7 @@ export function SentenceListBlock({ block, audioSrc }: Props) {
   return (
     <div className="grid gap-4">
       {audioSrc ? (
-        <div className="sticky top-2 z-10 grid gap-1 rounded-2xl bg-card p-3 shadow-sm ring-1 ring-foreground/8">
+        <div className="sticky top-2 z-10 grid max-w-2xl gap-1 rounded-2xl bg-card p-3 shadow-sm ring-1 ring-foreground/8">
           <audio
             ref={audioRef}
             controls
@@ -66,7 +66,7 @@ export function SentenceListBlock({ block, audioSrc }: Props) {
         <p className="text-sm text-muted-foreground">Audio của phần này chưa được tạo.</p>
       )}
 
-      <ol className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
+      <ol className="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {block.items.map((item, index) => (
           <li
             key={index}
@@ -84,7 +84,7 @@ export function SentenceListBlock({ block, audioSrc }: Props) {
                 type="button"
                 onClick={() => playOne(index)}
                 aria-label={`Nghe câu ${index + 1}`}
-                className="shrink-0 rounded-full p-2 text-primary hover:bg-primary/10 focus-visible:outline-2"
+                className="grid size-10 shrink-0 cursor-pointer place-items-center rounded-full text-primary transition-colors duration-200 hover:bg-primary/10 focus-visible:outline-2"
               >
                 <Volume2 className="size-4" aria-hidden />
               </button>

@@ -29,8 +29,8 @@ export function ExercisePlayer({ exercise, index, lastScore, written }: Props) {
     startTransition(async () => {
       const submitted = await submitExerciseAnswerAction(exercise.id, response);
       setResult(submitted);
-      // Reload the stored text and clear the old grade shown for a written answer.
-      if (submitted.ok && submitted.waiting) router.refresh();
+      // Reload the stored answer: the lesson page shows its latest score, and a written answer drops its old grade.
+      if (submitted.ok) router.refresh();
     });
   const response = toResponse(exercise, draft);
   const done = result?.ok === true;
