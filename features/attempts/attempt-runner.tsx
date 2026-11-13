@@ -147,7 +147,7 @@ export function AttemptRunner({ attemptId, remainingMs, questions }: Props) {
             {exercise.type === "speaking" ? (
               <SpeakingRecorder attemptId={attemptId} exerciseId={exercise.id} maxSeconds={exercise.maxSeconds ?? 60} savedAnswerId={recordingAnswerId} disabled={closing} />
             ) : (
-              <ExerciseInputs exercise={exercise} draft={drafts[index]} onChange={(draft) => change(index, draft)} disabled={closing} />
+              <ExerciseInputs exercise={exercise} draft={drafts[index]} onChange={(draft) => change(index, draft)} disabled={closing} ocr={{ attemptId }} />
             )}
           </CardContent>
         </Card>

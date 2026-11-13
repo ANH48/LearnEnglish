@@ -28,6 +28,7 @@ export const NAV_GROUPS: { title: string | null; items: NavItem[] }[] = [
     title: "Hệ thống",
     items: [
       { href: "/admin/staff", label: "Staff", permission: "staff.manage" },
+      { href: "/admin/prompts", label: "Prompt AI", permission: "prompt.manage" },
       { href: "/admin/groups", label: "Group quyền", superadminOnly: true },
     ],
   },

@@ -2,15 +2,22 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { BLANK } from "@/features/exercises/exercise-content";
 import type { Draft } from "./exercise-draft";
 import type { LearnerExercise } from "./learner-exercise";
+import { WritingAnswerInput } from "./writing-answer-input";
 
-type Props = { exercise: LearnerExercise; draft: Draft; onChange: (draft: Draft) => void; disabled: boolean };
+type Props = {
+  exercise: LearnerExercise;
+  draft: Draft;
+  onChange: (draft: Draft) => void;
+  disabled: boolean;
+  /** Writing questions: lets the learner send photos of a handwritten answer (see WritingAnswerInput). */
+  ocr?: { attemptId: string | null };
+};
 const selectClass = "h-9 min-w-0 flex-1 rounded-lg border border-input bg-background px-2 text-sm";
 
-export function ExerciseInputs({ exercise, draft, onChange, disabled }: Props) {
+export function ExerciseInputs({ exercise, draft, onChange, disabled, ocr }: Props) {
   const name = `exercise-${exercise.id}`;
 
   if (exercise.type === "multiple_choice" || exercise.type === "listening") {
@@ -118,24 +125,7 @@ export function ExerciseInputs({ exercise, draft, onChange, disabled }: Props) {
     );
   }
 
-  if (exercise.type === "writing") {
-    const words = draft.text.trim() ? draft.text.trim().split(/\s+/).length : 0;
-    return (
-      <div className="grid gap-1">
-        <Textarea
-          aria-label="Bài viết của bạn"
-          rows={8}
-          maxLength={10_000}
-          disabled={disabled}
-          value={draft.text}
-          onChange={(e) => onChange({ ...draft, text: e.target.value })}
-        />
-        <p className="text-xs text-muted-foreground tabular-nums">
-          {words} từ{exercise.minWords ? ` · tối thiểu ${exercise.minWords} từ` : ""} · teacher sẽ chấm bài này
-        </p>
-      </div>
-    );
-  }
+  if (exercise.type === "writing") return <WritingAnswerInput exercise={exercise} draft={draft} onChange={onChange} disabled={disabled} ocr={ocr} />;
 
   return <p className="text-sm text-muted-foreground">Loại bài này chưa làm được ở đây.</p>;
 }

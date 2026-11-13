@@ -1,5 +1,5 @@
 import "server-only";
-import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, DeleteObjectsCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 /**
@@ -76,5 +76,17 @@ export async function deleteObject(key: string): Promise<void> {
     await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
   } catch (error) {
     console.error(`Could not delete stored file ${key}`, error);
+  }
+}
+
+/** Deletes up to 1000 files in one request. Best effort like deleteObject: failures are logged, not thrown. */
+export async function deleteObjects(keys: string[]): Promise<void> {
+  if (keys.length === 0) return;
+  const { client, bucket } = storage();
+  try {
+    const result = await client.send(new DeleteObjectsCommand({ Bucket: bucket, Delete: { Objects: keys.map((Key) => ({ Key })), Quiet: true } }));
+    if (result.Errors?.length) console.error(`Could not delete ${result.Errors.length} stored files`, result.Errors.slice(0, 5));
+  } catch (error) {
+    console.error(`Could not delete ${keys.length} stored files`, error);
   }
 }

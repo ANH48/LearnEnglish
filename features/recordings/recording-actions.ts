@@ -1,48 +1,15 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { z } from "zod";
-import { takeableBy } from "@/features/attempts/learner-assessment";
+import { canAnswerNow } from "@/features/exercise-player/answerable-exercise";
 import { saveLatestPracticeAnswer } from "@/features/exercise-player/practice-answer";
-import { canStillSave } from "@/lib/assessments/attempt-rules";
 import { type CurrentCustomer, requireCustomer } from "@/lib/auth/current-customer";
 import { db } from "@/lib/db";
 import { deleteObject, presignUpload, statObject } from "@/lib/storage/object-storage";
 import { MAX_RECORDING_BYTES, isOwnRecordingKey, normalizeRecordingMime, recordingKey } from "@/lib/storage/recording-rules";
 
-const uuid = z.uuid();
-const isUuid = (value: unknown): value is string => uuid.safeParse(value).success;
 const REFUSED = { ok: false as const, error: "Không lưu được bản thu cho câu này." };
-
-/** A speaking question the learner may answer now: inside a running attempt, or as practice in a lesson. */
-async function canRecordFor(customer: CurrentCustomer, attemptId: unknown, exerciseId: unknown): Promise<boolean> {
-  if (!isUuid(exerciseId)) return false;
-  if (attemptId === null) {
-    const exercise = await db.exercise.findFirst({
-      where: {
-        id: exerciseId,
-        type: "speaking",
-        deletedAt: null,
-        status: "published",
-        lesson: { deletedAt: null, status: "published" },
-        course: { deletedAt: null, status: "published", enrollments: { some: { customerId: customer.id, status: "approved" } } },
-      },
-      select: { id: true },
-    });
-    return exercise !== null;
-  }
-  if (!isUuid(attemptId)) return false;
-  const attempt = await db.attempt.findFirst({
-    where: {
-      id: attemptId,
-      customerId: customer.id,
-      status: "in_progress",
-      assessment: { ...takeableBy(customer.id), exercises: { some: { exerciseId, exercise: { type: "speaking" } } } },
-    },
-    select: { deadlineAt: true },
-  });
-  return attempt !== null && canStillSave(attempt.deadlineAt, new Date());
-}
+const canRecordFor = (customer: CurrentCustomer, attemptId: unknown, exerciseId: unknown) => canAnswerNow(customer, attemptId, exerciseId, "speaking");
 
 export type UploadTicket = { ok: true; url: string; key: string; mime: string } | { ok: false; error: string };
 

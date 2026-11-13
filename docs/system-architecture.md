@@ -9,7 +9,8 @@ Trạng thái: giai đoạn 1, 2, 3 xong. Phần chưa làm ghi rõ "(giai đo�
 | Next.js trên Vercel | Giao diện + server actions. Mọi trang admin render theo request. |
 | PostgreSQL (Supabase) | Dữ liệu chính, qua Prisma. `DATABASE_URL` = pooler, `DIRECT_URL` = kết nối trực tiếp cho migration. |
 | Lưu file qua S3 API | Bài thu âm; PDF và audio ở giai đoạn sau. Supabase Storage (S3 protocol) cho cả máy dev lẫn deploy, sau này AWS S3 hoặc Cloudflare R2 khi data lớn; chỉ khác các biến `S3_*` |
-| MongoDB Atlas | Prompt, version, history (giai đoạn 4) |
+| MongoDB Atlas | Prompt AI: `prompt_categories` (key, type, model, version đang áp dụng), `prompts` (key + version + prompt JSON, không sửa sau khi tạo), `prompt_runs` (mỗi lần gọi: version, model, kết quả, lỗi; tự xoá sau 90 ngày) |
+| Groq | Gọi model qua `fetch` (API kiểu OpenAI, không dùng SDK). Hiện có: đọc chữ từ ảnh bài viết tay |
 | Bridge trên máy user | Script theo dõi job + phiên Claude Code (giai đoạn 4) |
 
 ## Đăng nhập
@@ -51,6 +52,9 @@ Tài khoản và nội dung dùng xóa mềm (`deleted_at`); email và slug củ
 - Bài luyện trong bài học lưu vào `answers` với `attempt_id` rỗng, mỗi học viên một dòng mới nhất cho mỗi bài tập.
 - Tiến độ: `lesson_progress`, học viên tự đánh dấu học xong. Bài học không khóa tuần tự.
 - Bài viết trong bài học: học viên nộp chữ, lưu vào `answers` chưa có điểm và vào hàng chờ chấm; nộp lại thì xóa điểm cũ.
+- Bài viết tay → chữ (`features/writing-ocr/`): ở mọi câu viết (bài học và bài kiểm tra), học viên chụp hoặc chọn tối đa 3 ảnh. Trình duyệt thu nhỏ ảnh (cạnh dài 1600 px, JPEG ≤ 3 MB) thay cho dịch vụ nén ngoài, upload thẳng lên bucket (`writing-images/<customer id>/`) bằng URL ký sẵn, rồi gọi `POST /api/writing-ocr`. Route kiểm tra quyền trả lời câu đó, ghi `writing_images` (hết hạn sau 3 ngày, tối đa 30 ảnh/24 giờ mỗi học viên), lấy prompt `ocr_image_to_text` đang áp dụng trên MongoDB và gọi Groq. Chữ đọc được (giữ nguyên lỗi, không sửa) được thêm vào ô bài viết để học viên tự sửa rồi nộp như bình thường. Chờ quá 2 phút thì báo hết giờ, bấm thử lại không phải upload lại. Ảnh không gắn vào bài nộp.
+- Dọn ảnh: Vercel Cron (`vercel.json`) gọi `/api/cron/clear-writing-images` mỗi ngày lúc 2 giờ sáng giờ VN, kèm `CRON_SECRET`; xoá file rồi xoá dòng của ảnh quá hạn.
+- Prompt AI (`/admin/prompts`, quyền `prompt.manage`): category giữ type, key, model và version đang áp dụng; mỗi version là key + version + prompt JSON (`system`, `user`, `responseFormat`, `params` trong danh sách cho phép). Version không sửa được, đổi gì cũng tạo version mới rồi bấm áp dụng. Mỗi lần gọi ghi một dòng `prompt_runs` để dò lỗi theo version. Sau này thêm category `writing_grading` (model khác) cho phần gợi ý chấm bài viết.
 - Bài nói trong bài học: thu âm xong là nộp, vào hàng chờ chấm; thu lại thì thay bản cũ.
 - Bài điền từ có `data.teacherGraded = true` (ô chọn trong form bài tập): làm trong bài học thì lưu chưa có điểm và vào hàng chờ chấm như bài viết; trong bài kiểm tra vẫn chấm tự động.
 - Audio của bài học (`/api/lesson-audio/[lessonId]/[mediaId]`): chỉ phát file mà `blocks` của bài đó nhắc tới, cho học viên đã được duyệt vào khóa đã xuất bản hoặc staff vào được khóa; còn lại 404. File nằm ở `lesson-audio/<lesson id>/` trong bucket, có dòng `media_files` loại `audio`.

@@ -60,7 +60,7 @@ export function ExercisePlayer({ exercise, index, lastScore, written }: Props) {
             onSaved={() => router.refresh()}
           />
         ) : (
-          <ExerciseInputs exercise={exercise} draft={draft} onChange={setDraft} disabled={pending || done} />
+          <ExerciseInputs exercise={exercise} draft={draft} onChange={setDraft} disabled={pending || done} ocr={{ attemptId: null }} />
         )}
 
         {result?.ok === false && (
