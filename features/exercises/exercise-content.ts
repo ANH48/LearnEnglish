@@ -23,6 +23,8 @@ export const EXERCISE_TYPES = Object.keys(EXERCISE_TYPE_LABELS) as ExerciseTypeN
 /** Marks a blank inside fill-in-the-blank text. */
 export const BLANK = "___";
 
+/** A word to translate can have many right meanings, so a blank takes a long list of accepted answers. */
+export const MAX_ACCEPTED_ANSWERS = 40;
 const text = z.string().trim().min(1, "Không được để trống nội dung bài tập").max(2000, "Nội dung quá dài");
 const choiceShape = {
   options: z.array(text).min(2, "Cần ít nhất 2 lựa chọn").max(8),
@@ -34,7 +36,7 @@ const editorSchemas = {
   listening: z.object({ transcript: text.max(2000), ...choiceShape }),
   fill_blank: z.object({
     text,
-    answers: z.array(z.array(text.max(200, "Đáp án tối đa 200 ký tự")).min(1).max(10)).min(1).max(30),
+    answers: z.array(z.array(text.max(200, "Đáp án tối đa 200 ký tự")).min(1).max(MAX_ACCEPTED_ANSWERS)).min(1).max(30),
     /** Lesson practice is queued for the teacher instead of being graded at once. */
     teacherGraded: z.boolean().optional(),
   }),

@@ -55,11 +55,38 @@ export function parseWritingResponse(response: unknown): { text: string } | null
 export type ExerciseResponse = { [K in AutoGradedType]: z.infer<(typeof responseSchemas)[K]> };
 export type Graded = { ratio: number; parts: boolean[] };
 
-/** Case, surrounding/repeated spaces and curly apostrophes do not count as mistakes. */
+// Vietnamese allows the tone mark on either vowel of "oa", "oe", "uy" (hoà / hòa, thuỷ / thủy).
+const TONE_PLACEMENT: Record<string, string> = {
+  oà: "òa", oá: "óa", oả: "ỏa", oã: "õa", oạ: "ọa",
+  oè: "òe", oé: "óe", oẻ: "ỏe", oẽ: "õe", oẹ: "ọe",
+  uỳ: "ùy", uý: "úy", uỷ: "ủy", uỹ: "ũy", uỵ: "ụy",
+};
+const TONE_PLACEMENT_PATTERN = new RegExp(Object.keys(TONE_PLACEMENT).join("|"), "g");
+
+/** Case, surrounding/repeated spaces, curly apostrophes and where a Vietnamese tone mark sits do not count as mistakes. */
 export function normalizeAnswer(text: string): string {
   // NFC: Vietnamese typed with combining marks must equal the precomposed form.
-  return text.normalize("NFC").trim().replace(/\s+/g, " ").replace(/[’‘`]/g, "'").toLowerCase();
+  return text
+    .normalize("NFC")
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/[’‘`]/g, "'")
+    .toLowerCase()
+    .replace(TONE_PLACEMENT_PATTERN, (pair) => TONE_PLACEMENT[pair]);
 }
+
+/**
+ * What a learner may have meant by one blank. A word often has several meanings and learners
+ * list them ("sửa, sửa chữa"), so the whole text and each listed piece are tried; one accepted
+ * piece is enough. The whole text comes first for answers that contain a comma themselves.
+ * A trailing full stop is not part of a meaning.
+ */
+function answerCandidates(text: string): string[] {
+  const pieces = [text, ...text.split(/[,;/]/)].map((piece) => normalizeAnswer(piece).replace(/[.!]+$/, "").trim()).filter((candidate) => candidate !== "");
+  // "chiếc ghế" and "một cái ghế" name the same thing as "ghế": the counting word in front may be left out.
+  return pieces.flatMap((piece) => [piece, piece.replace(LEADING_COUNT_WORDS, "")]).filter((candidate) => candidate !== "");
+}
+const LEADING_COUNT_WORDS = /^((một|1|những|các|cái|chiếc|con|cây|quả|trái|tờ|bức) )+/;
 
 const whole = (correct: boolean): Graded => ({ ratio: correct ? 1 : 0, parts: [correct] });
 const perPart = (parts: boolean[]): Graded => ({
@@ -98,8 +125,8 @@ function gradeUnchecked(type: string, answerKey: unknown, response: unknown): Gr
       const given = (parsed.data as ExerciseResponse["fill_blank"]).answers;
       return perPart(accepted.map((options, i) => {
           // An empty response never earns credit, even if a broken key lists "" as accepted.
-          const answer = normalizeAnswer(given[i] ?? "");
-          return answer !== "" && options.some((o) => normalizeAnswer(o) === answer);
+          const acceptedTexts = new Set(options.map(normalizeAnswer));
+          return answerCandidates(given[i] ?? "").some((candidate) => acceptedTexts.has(candidate));
         }),
       );
     }

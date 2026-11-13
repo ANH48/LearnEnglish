@@ -30,6 +30,21 @@ describe("gradeExercise", () => {
     expect(gradeExercise("fill_blank", blank.answerKey, { answers: ["am"] })?.ratio).toBe(0.5);
   });
 
+  it("fill in the blank accepts a list of meanings when one of them is accepted", () => {
+    const meanings = stored("fill_blank", { text: "fix ___ dinner ___ reply ___", answers: [["sửa", "sửa chữa"], ["bữa tối", "bữa ăn tối"], ["Yes, I am"]] });
+    const grade = (answers: string[]) => gradeExercise("fill_blank", meanings.answerKey, { answers })?.parts;
+    expect(grade(["Sửa, sửa chữa", "Buổi ăn tối, bữa tối", "yes, i am"])).toEqual([true, true, true]);
+    expect(grade(["sửa / chữa", "bữa trưa; bữa ăn tối", "Yes"])).toEqual([true, true, false]);
+    expect(grade(["chữa, vá", " , ", ""])).toEqual([false, false, false]);
+  });
+
+  it("fill in the blank forgives counting words, tone-mark placement and a final full stop", () => {
+    const nouns = stored("fill_blank", { text: "chair ___ building ___ key ___", answers: [["ghế"], ["toà nhà"], ["chìa khóa"]] });
+    const grade = (answers: string[]) => gradeExercise("fill_blank", nouns.answerKey, { answers })?.parts;
+    expect(grade(["Chiếc ghế.", "tòa nhà", "một cái chìa khoá"])).toEqual([true, true, true]);
+    expect(grade(["cái bàn", "nhà", "cái"])).toEqual([false, false, false]);
+  });
+
   it("matching gives credit per pair", () => {
     // right column is stored sorted: ["meow", "woof"]; dog -> 1, cat -> 0
     expect(gradeExercise("matching", matching.answerKey, { matches: [1, 0] })?.ratio).toBe(1);
